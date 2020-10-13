@@ -32,6 +32,12 @@ def get():
     print("Request '/get', returned {} objects".format(len(toReturn)))
     return json.dumps(toReturn)
 
+@app.route('/check', methods=['POST'])
+def check():
+    content = request.json
+    print(content)
+    return 'Done'
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
