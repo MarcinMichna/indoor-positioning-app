@@ -5,6 +5,7 @@
 #include <BLEScan.h>
 #include <BLEServer.h>
 #include <BLEAdvertisedDevice.h>
+#include <Arduino_JSON.h>
 
 // Bluetooth server
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
@@ -15,8 +16,8 @@ const char *apSsid = "ESP_1";
 const char *apPassword= "polska123";
 
 // Wifi connection
-const char *wifiSsid = "Marcin <3";
-const char *wifiPassword= "polska123";
+const char *wifiSsid = "Marcin_Krul";
+const char *wifiPassword= "M@rsik353";
 
 // Bluetooth
 int bleScanTime = 5; // in seconds
@@ -27,6 +28,10 @@ class BleScanResult: public BLEAdvertisedDeviceCallbacks {
       Serial.printf("Advertised Device: %s \n", advertisedDevice.toString().c_str());
     }
 };
+
+// REST
+const char* serverName = "michnam.pl/check";
+
 
 void setup() {
   Serial.begin(115200);
@@ -40,6 +45,7 @@ void loop() {
   delay(1000);
   wifiScan();
   bleScan();
+  testRequest();
 }
 
 void apSetup() {
@@ -121,4 +127,13 @@ void bleScan() {
   Serial.println("Scan done!");
   bleScanner->clearResults();   // delete results fromBLEScan buffer to release memory
   delay(2000);
+}
+
+void testRequest() {
+  HTTPClient http;
+  http.begin(serverName);
+  http.addHeader("Content-Type", "application/json");
+  int httpResponseCode = http.POST("{\"api_key\":\"tPmAT5Ab3j7F9\",\"sensor\":\"BME280\",\"value1\":\"24.25\",\"value2\":\"49.54\",\"value3\":\"1005.14\"}");
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpResponseCode);
 }
