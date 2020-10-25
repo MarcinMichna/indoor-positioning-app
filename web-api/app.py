@@ -30,9 +30,9 @@ def add():
         dataWifi.append(i)
     for i in bleJson:
         if len(dataWifi) > 1000:
-            dataWifi.pop(0)
+            dataBle.pop(0)
         i["timestamp"] = timestamp
-        dataWifi.append(i)
+        dataBle.append(i)
     print("Request '/add', added {} + {} objects".format(len(wifiJson), len(bleJson)))
     return 'OK'
 
@@ -48,12 +48,12 @@ def get():
     return json.dumps({"wifi": resWifi, "ble": resBle}, default=str)
 
 
-@app.route('/check', methods=['POST'])
+@app.route('/check', methods=['GET'])
 def check():
-    content = request.json
-    print(content)
-    return 'Done'
+    print(dataWifi)
+    print(dataBle)
+    return json.dumps({"wifi": dataWifi, "ble": dataBle}, default=str)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+    app.run(host='0.0.0.0', debug=True)
