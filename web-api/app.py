@@ -21,8 +21,6 @@ def add():
     timestamp = datetime.today().replace(microsecond=0)
     wifiJson = request.json["wifi"]
     bleJson = request.json["ble"]
-    app.logger.info(wifiJson)
-    app.logger.info(bleJson)
     for i in wifiJson:
         if len(dataWifi) > 1000:
             dataWifi.pop(0)
@@ -53,12 +51,6 @@ def checkGet():
     app.logger.info(dataWifi)
     app.logger.info(dataBle)
     return json.dumps({"wifi": dataWifi, "ble": dataBle}, default=str)
-
-
-@app.route('/checkPost', methods=['POST'])
-def checkPost():
-    app.logger.info(request.json)
-    return 'OK'
 
 
 if __name__ == '__main__':
