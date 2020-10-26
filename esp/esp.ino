@@ -25,7 +25,7 @@ BLEScan* bleScanner;
 
 
 // REST
-String serverName = "http://michnam.pl:5000/checkPost";
+String serverName = "http://michnam.pl:5000/add";
 String json = "";
 
 class BleScanResult: public BLEAdvertisedDeviceCallbacks {
@@ -35,9 +35,9 @@ class BleScanResult: public BLEAdvertisedDeviceCallbacks {
       int rssi = advertisedDevice.getRSSI();
 
       json += String("{ ");
-      json += String("'addr': ") + String("'") + String(addr) + String("', ");
-      json += String("'rssi': ") + String(rssi) + String(", ");
-      json += String("'esp': ") + String("'") + String(apSsid) + String("' ");
+      json += String("\"addr\": ") + String("\"") + String(addr) + String("\", ");
+      json += String("\"rssi\": ") + String(rssi) + String(", ");
+      json += String("\"esp\": ") + String("\"") + String(apSsid) + String("\" ");
       json += String(" },");
     }
 };
@@ -79,16 +79,6 @@ void stationSetup() {
   }
   Serial.print("Wifi client IP: ");
   Serial.println(WiFi.localIP()); 
-
-  HTTPClient http;
-  String host = "http://michnam.pl:5000";
-  http.begin(host.c_str());
-  int httpResponseCode = http.GET();
-  Serial.print("Test http request code: ");
-  Serial.println(httpResponseCode);
-  Serial.println(".");
-  http.end();
-  delay(1000);
 }
 
 void bluetoothClientSetup() {
@@ -123,13 +113,13 @@ void wifiScan() {
   int n = WiFi.scanNetworks();
   Serial.print("Wifi devices found: ");
   Serial.println(n);
-  json = "{ 'wifi': [ ";
+  json = "{ \"wifi\": [ ";
   if (n != 0) {
       for (int i = 0; i < n; ++i) {
           json += String("{ ");
-          json += String("'ssid': ") + String("'") + String(WiFi.SSID(i)) + String("', ");
-          json += String("'rssi': ") + String(WiFi.RSSI(i)) + String(", ");
-          json += String("'esp': ") + String("'") + String(apSsid) + String("'");
+          json += String("\"ssid\": ") + String("\"") + String(WiFi.SSID(i)) + String("\", ");
+          json += String("\"rssi\": ") + String(WiFi.RSSI(i)) + String(", ");
+          json += String("\"esp\": ") + String("\"") + String(apSsid) + String("\"");
           json += String("},");
           }
   }
@@ -138,7 +128,7 @@ void wifiScan() {
 }
 
 void bleScan() {
-  json += "'ble': [ ";
+  json += "\"ble\": [ ";
   BLEScanResults foundDevices = bleScanner->start(bleScanTime, false);
   Serial.print("BLE devices found: ");
   Serial.println(foundDevices.getCount());
