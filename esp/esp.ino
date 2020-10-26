@@ -25,7 +25,7 @@ BLEScan* bleScanner;
 
 
 // REST
-String serverName = "michnam.pl:5000/add";
+String serverName = "http://michnam.pl:5000/checkPost";
 String json = "";
 
 class BleScanResult: public BLEAdvertisedDeviceCallbacks {
@@ -38,7 +38,7 @@ class BleScanResult: public BLEAdvertisedDeviceCallbacks {
       json += String("'addr': ") + String("'") + String(addr) + String("', ");
       json += String("'rssi': ") + String(rssi) + String(", ");
       json += String("'esp': ") + String("'") + String(apSsid) + String("' ");
-      json += String(" }, ");
+      json += String(" },");
     }
 };
 
@@ -81,7 +81,7 @@ void stationSetup() {
   Serial.println(WiFi.localIP()); 
 
   HTTPClient http;
-  String host = "michnam.pl:5000";
+  String host = "http://michnam.pl:5000";
   http.begin(host.c_str());
   int httpResponseCode = http.GET();
   Serial.print("Test http request code: ");
@@ -129,7 +129,7 @@ void wifiScan() {
           json += String("{ ");
           json += String("'ssid': ") + String("'") + String(WiFi.SSID(i)) + String("', ");
           json += String("'rssi': ") + String(WiFi.RSSI(i)) + String(", ");
-          json += String("'esp': ") + String("'") + String(apSsid) + String("' ");
+          json += String("'esp': ") + String("'") + String(apSsid) + String("'");
           json += String("},");
           }
   }

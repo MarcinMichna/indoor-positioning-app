@@ -12,7 +12,7 @@ lock = Lock()
 
 @app.route('/')
 def hello_world():
-    print("root path request - OK")
+    app.logger.info("root path request - OK")
     return 'OK'
 
 
@@ -21,8 +21,8 @@ def add():
     timestamp = datetime.today().replace(microsecond=0)
     wifiJson = request.json["wifi"]
     bleJson = request.json["ble"]
-    print(wifiJson)
-    print(bleJson)
+    app.logger.info(wifiJson)
+    app.logger.info(bleJson)
     for i in wifiJson:
         if len(dataWifi) > 1000:
             dataWifi.pop(0)
@@ -33,7 +33,7 @@ def add():
             dataBle.pop(0)
         i["timestamp"] = timestamp
         dataBle.append(i)
-    print("Request '/add', added {} + {} objects".format(len(wifiJson), len(bleJson)))
+    app.logger.info("Request '/add', added {} + {} objects".format(len(wifiJson), len(bleJson)))
     return 'OK'
 
 
@@ -44,15 +44,21 @@ def get():
         resBle = copy.deepcopy(dataBle)
         dataWifi.clear()
         dataBle.clear()
-    print("Request '/get', returned {} + {} objects".format(len(resWifi), len(resBle)))
+    app.logger.info("Request '/get', returned {} + {} objects".format(len(resWifi), len(resBle)))
     return json.dumps({"wifi": resWifi, "ble": resBle}, default=str)
 
 
-@app.route('/check', methods=['GET'])
-def check():
-    print(dataWifi)
-    print(dataBle)
+@app.route('/checkGet', methods=['GET'])
+def checkGet():
+    app.logger.info(dataWifi)
+    app.logger.info(dataBle)
     return json.dumps({"wifi": dataWifi, "ble": dataBle}, default=str)
+
+
+@app.route('/checkPost', methods=['POST'])
+def checkPost():
+    app.logger.info(request.json)
+    return 'OK'
 
 
 if __name__ == '__main__':
