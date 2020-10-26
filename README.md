@@ -37,5 +37,5 @@ System składa się z kilku elementów:
     &#9744; dodanie obszaru i jego konfiguracja  
     &#9744; serwis analizujący na bieżąco lokalizację  
 
-
+Więcej [tutaj](https://github.com/MarcinMichna/indoor-positioning-app/projects/1)
 
