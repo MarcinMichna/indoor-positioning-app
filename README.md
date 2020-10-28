@@ -37,4 +37,5 @@ System składa się z kilku elementów:
     &#9744; widok do dodawania obszaru  
     &#9744; dodanie obszaru i jego konfiguracja  
     &#9744; serwis analizujący na bieżąco lokalizację  
+    &#9744; ***BARDZIEJ ZAAWANSOWANA WERSJA ALGORYTMU*** 
 
