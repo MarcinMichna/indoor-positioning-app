@@ -2,6 +2,8 @@ from flask import Flask, request
 from threading import Lock
 import json
 import copy
+import pytz
+import time
 from datetime import datetime
 
 app = Flask(__name__)
@@ -13,12 +15,14 @@ lock = Lock()
 @app.route('/')
 def hello_world():
     app.logger.info("root path request - OK")
-    return 'OK'
+    timestamp = datetime.now().replace(microsecond=0)
+    app.logger.info(timestamp)
+    return str(timestamp)
 
 
 @app.route('/add', methods=['POST'])
 def add():
-    timestamp = datetime.today().replace(microsecond=0)
+    timestamp = datetime.now().replace(microsecond=0)
     wifiJson = request.json["wifi"]
     bleJson = request.json["ble"]
     for i in wifiJson:
@@ -50,7 +54,7 @@ def get():
 def checkGet():
     app.logger.info(dataWifi)
     app.logger.info(dataBle)
-    return json.dumps({"wifi": dataWifi, "ble": dataBle}, default=str)
+    return json.dumps({"wifi": dataWifi, "ble": dataBle, "time": datetime.now().replace(microsecond=0)}, default=str)
 
 
 if __name__ == '__main__':
