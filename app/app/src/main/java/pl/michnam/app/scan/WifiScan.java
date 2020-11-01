@@ -7,14 +7,16 @@ import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.util.List;
 
 import pl.michnam.app.MainActivity;
 
-public class WifiScanner {
+public class WifiScan {
+    private static String TAG = "inposScan";
 
-    public static void wifiScan(Context context){
+    public static void setupWifiScan(Context context, TextView textView){
 
         WifiManager wifiManager = (WifiManager)
                 context.getSystemService(Context.WIFI_SERVICE);
@@ -26,12 +28,15 @@ public class WifiScanner {
                         WifiManager.EXTRA_RESULTS_UPDATED, false);
                 if (success) {
                     List<ScanResult> results = wifiManager.getScanResults();
+                    textView.setText("");
                     for(ScanResult i : results) {
-                        Log.i(MainActivity.TAG,"SSID: " + i.SSID + ", RSSI: " + i.level);
+                        String info = "SSID: " + i.SSID + ", RSSI: " + i.level;
+                        Log.d(TAG,info);
+                        textView.setText(textView.getText() + info + "\n");
                     }
                 } else {
                     // scan failure handling
-                    Log.i(MainActivity.TAG, "Wifi scan error");
+                    Log.i(TAG, "Wifi scan error");
                 }
             }
         };
@@ -40,11 +45,15 @@ public class WifiScanner {
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         context.registerReceiver(wifiScanReceiver, intentFilter);
 
-        boolean success = wifiManager.startScan();
-        if (!success) {
-            Log.i(MainActivity.TAG, "Wifi scan error");
-        }
-
     }
 
+    public static void scan(Context context) {
+        WifiManager wifiManager = (WifiManager)
+                context.getSystemService(Context.WIFI_SERVICE);
+
+        boolean success = wifiManager.startScan();
+        if (!success) {
+            Log.i(TAG, "Wifi scan error");
+        }
+    }
 }
