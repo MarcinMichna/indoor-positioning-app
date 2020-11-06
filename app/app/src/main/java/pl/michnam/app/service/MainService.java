@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat;
 
 import pl.michnam.app.MainActivity;
 import pl.michnam.app.R;
+import pl.michnam.app.scan.WifiScan;
 
 import static pl.michnam.app.App.CHANNEL_ID;
 
@@ -21,17 +22,20 @@ public class MainService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "Service starting");
         pushForeground();
-        Log.i(TAG, "Service started");
+
         return START_NOT_STICKY;
     }
 
+    public void setServiceCallbacks(ServiceCallbacks serviceCallbacks) {
+        this.serviceCallbacks = serviceCallbacks;
+    }
+
+    private ServiceCallbacks serviceCallbacks;
     private final IBinder binder = new LocalBinder();
 
     public class LocalBinder extends Binder {
         public MainService getService() {
-            // Return this instance of LocalService so clients can call public methods
             return MainService.this;
         }
     }
@@ -47,16 +51,24 @@ public class MainService extends Service {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("TMP TITLE")
-                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle("You are currently in: area 51")
+                .setSmallIcon(R.drawable.flag)
                 .setContentIntent(pendingIntent).build();
 
         startForeground(364, notification);
     }
 
 
+
     public void test()
     {
         Log.d(TAG, "Service bind OK");
+        if (serviceCallbacks != null) serviceCallbacks.debug();
+        WifiScan.setupWifiScan(this, serviceCallbacks);
+    }
+
+    public void startScan() {
+        WifiScan.setupWifiScan(this,serviceCallbacks);
+        WifiScan.scan(this);
     }
 }

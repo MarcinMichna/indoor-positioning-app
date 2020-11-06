@@ -12,11 +12,12 @@ import android.widget.TextView;
 import java.util.List;
 
 import pl.michnam.app.MainActivity;
+import pl.michnam.app.service.ServiceCallbacks;
 
 public class WifiScan {
     private static String TAG = "inposScan";
 
-    public static void setupWifiScan(Context context, TextView textView){
+    public static void setupWifiScan(Context context, ServiceCallbacks serviceCallbacks){
 
         WifiManager wifiManager = (WifiManager)
                 context.getSystemService(Context.WIFI_SERVICE);
@@ -28,16 +29,18 @@ public class WifiScan {
                         WifiManager.EXTRA_RESULTS_UPDATED, false);
                 if (success) {
                     List<ScanResult> results = wifiManager.getScanResults();
-                    textView.setText("");
+                    String info = "";
                     for(ScanResult i : results) {
-                        String info = "SSID: " + i.SSID + ", RSSI: " + i.level;
+                        info += "SSID: " + i.SSID + ", RSSI: " + i.level;
                         Log.d(TAG,info);
-                        textView.setText(textView.getText() + info + "\n");
+                        info += "\n";
                     }
+                    if (serviceCallbacks != null) serviceCallbacks.printWifi(info);
                 } else {
                     // scan failure handling
                     Log.i(TAG, "Wifi scan error");
                 }
+                scan(context);
             }
         };
 
@@ -56,4 +59,6 @@ public class WifiScan {
             Log.i(TAG, "Wifi scan error");
         }
     }
+    
+
 }
