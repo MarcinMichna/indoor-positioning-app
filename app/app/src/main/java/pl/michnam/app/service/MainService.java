@@ -14,25 +14,33 @@ import androidx.core.app.NotificationCompat;
 import pl.michnam.app.MainActivity;
 import pl.michnam.app.R;
 import pl.michnam.app.scan.WifiScan;
+import pl.michnam.app.util.Tag;
 
 import static pl.michnam.app.App.CHANNEL_ID;
 
 public class MainService extends Service {
-    private static String TAG = "inposService";
+    private static boolean working;
+
+    private ServiceCallbacks serviceCallbacks;
+    private final IBinder binder = new LocalBinder();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        pushForeground();
-
+        pushServiceForeground();
         return START_NOT_STICKY;
     }
+
+    public void startWifiScan() {
+        WifiScan.setupWifiScan(this, serviceCallbacks);
+    }
+
+    /////////////////////////////////
+    /////// SERVICE UTILS ///////////
+    /////////////////////////////////
 
     public void setServiceCallbacks(ServiceCallbacks serviceCallbacks) {
         this.serviceCallbacks = serviceCallbacks;
     }
-
-    private ServiceCallbacks serviceCallbacks;
-    private final IBinder binder = new LocalBinder();
 
     public class LocalBinder extends Binder {
         public MainService getService() {
@@ -46,8 +54,7 @@ public class MainService extends Service {
         return binder;
     }
 
-    public void pushForeground()
-    {
+    private void pushServiceForeground() {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -58,17 +65,15 @@ public class MainService extends Service {
         startForeground(364, notification);
     }
 
+    ///////////////////////////
+    ///// GETTERS SETTERS /////
+    ///////////////////////////
 
-
-    public void test()
-    {
-        Log.d(TAG, "Service bind OK");
-        if (serviceCallbacks != null) serviceCallbacks.debug();
-        WifiScan.setupWifiScan(this, serviceCallbacks);
+    public static boolean isWorking() {
+        return working;
     }
 
-    public void startScan() {
-        WifiScan.setupWifiScan(this,serviceCallbacks);
-        WifiScan.scan(this);
+    public static void setWorking(boolean working) {
+        MainService.working = working;
     }
 }

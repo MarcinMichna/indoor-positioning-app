@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
@@ -17,148 +16,172 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.Window;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import java.util.Arrays;
 
-import pl.michnam.app.scan.WifiScan;
 import pl.michnam.app.service.MainService;
 import pl.michnam.app.service.ServiceCallbacks;
+import pl.michnam.app.util.Tag;
 
 public class MainActivity extends AppCompatActivity implements ServiceCallbacks {
-    private String TAG = "inposMain";
-
     private MainService mainService;
-    boolean serviceBound = false;
-
-    private TextView textView;
-    private Button button;
-    private EditText areaName;
+    boolean boundService = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        startServiceIfNotRunning();
-        requestPermission();
-    }
-
-    private void init() {
-        Log.i(TAG, "Permission check: OK");
-        textView = findViewById(R.id.textView);
-        button = findViewById(R.id.button);
-        areaName = findViewById(R.id.areaName);
-        button.setText("Add new area");
-        areaName.setHint("New area name");
-        Intent intent = new Intent(this, MainService.class);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        initView();
+        handlePermissions(); // if OK, runs onReady
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (serviceBound) {
-            serviceBound = false;
+        unbindServiceConnection();
+    }
+
+    private void onReady() {
+
+    }
+
+    ////////////////////////////
+    ////////// SERVICE /////////
+    ////////////////////////////
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            MainService.LocalBinder binder = (MainService.LocalBinder) service;
+            mainService = binder.getService();
+            boundService = true;
+            mainService.setServiceCallbacks(MainActivity.this);
+            enableButtons();
+            onReady();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            boundService = false;
+        }
+    };
+
+
+
+
+    private void bindServiceConnection() {
+        Intent intent = new Intent(this, MainService.class);
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void unbindServiceConnection() {
+        if (boundService) {
+            boundService = false;
             mainService.setServiceCallbacks(null);
             unbindService(serviceConnection);
         }
     }
 
+    //////////////////////////////
+    //// PERMISSIONS HANDLING ////
+    //////////////////////////////
+
+    private void handlePermissions(){
+        requestPermissionIfNeeded();
+        handleLocation();
+    }
+
+    private void requestPermissionIfNeeded() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) bindServiceConnection();
+        else requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); // Runs onRequestPermissionsResult after user action
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Log.d(TAG, "Permission requestCode: " + requestCode);
-        Log.d(TAG, Arrays.asList(grantResults).get(0)[0] + "");
+        Log.d(Tag.UI, "Permission requestCode: " + requestCode);
+        Log.d(Tag.UI, Arrays.asList(grantResults).get(0)[0] + "");
         if (requestCode == 1) {
-            if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED) init();
-            else requestPermission();
+            if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED) bindServiceConnection();
+            else requestPermissionIfNeeded();
         }
     }
 
-    private void requestPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-            init();
-        else requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-    }
-
-    public void statusCheck() {
+    public void handleLocation() {
         final LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            buildAlertMessageNoGps();
-        }
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) showAlertMessageNoGps();
     }
 
-    private void buildAlertMessageNoGps() {
+    private void showAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+        builder.setMessage("Enable GPS to continue")
                 .setCancelable(false)
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(final DialogInterface dialog, final int id) {
                         startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(final DialogInterface dialog, final int id) {
-                        buildAlertMessageNoGps();
                     }
                 });
         final AlertDialog alert = builder.create();
         alert.show();
     }
 
+    /////////////////
+    ///// VIEW //////
+    /////////////////
+    private Button startButton;
+    private Button areaButton;
+    private TextView debugInfo;
+    private EditText areaName;
 
-    private ServiceConnection serviceConnection = new ServiceConnection() {
+    private void initView() {
+        startButton = findViewById(R.id.startButton);
+        areaButton = findViewById(R.id.areaButton);
+        debugInfo = findViewById(R.id.debugInfo);
+        areaName = findViewById(R.id.areaName);
 
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            MainService.LocalBinder binder = (MainService.LocalBinder) service;
-            mainService = binder.getService();
-            serviceBound = true;
-            mainService.setServiceCallbacks(MainActivity.this);
-            afterSetup();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            serviceBound = false;
-        }
-    };
-
-    private void afterSetup() {
-        mainService.test();
-        WifiScan.setupWifiScan(this, null);
-        WifiScan.scan(this);
+        areaName.setActivated(false);
+        startButton.setActivated(false);
     }
 
-    //SERVICE
-    private void startServiceIfNotRunning() {
-        Log.d(TAG, "MainActivity -> startServiceIfNotRunning");
-        if (!isServiceRunning()) {
-            Log.d(TAG, "Starting service");
-            Intent serviceIntent = new Intent(this, MainService.class);
-            ContextCompat.startForegroundService(this, serviceIntent);
+    ////////////////////////////
+    ///// VIEW CONTROLLER //////
+    ////////////////////////////
+    public void onStartButtonClick(View v) {
+        adjustStartButtonText();
+        if (MainService.isWorking()) mainService.startWifiScan();
+        else debugInfo.setText("");
+    }
+
+    public void onAddAreaButtonClick(View v) {
+
+    }
+
+    /////////////////////////
+    ///// VIEW HELPERS //////
+    /////////////////////////
+    private void adjustStartButtonText() {
+        if (MainService.isWorking()) {
+            startButton.setText(R.string.start);
+            MainService.setWorking(false);
+        }
+        else {
+            startButton.setText(R.string.stop);
+            MainService.setWorking(true);
         }
     }
 
-    private boolean isServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
-            if ("pl.michnam.app.service.MainService".equals(service.service.getClassName()))
-                return true;
-        return false;
+    private void enableButtons() {
+        startButton.setActivated(true);
+        areaButton.setActivated(true);
     }
 
     @Override
-    public void debug() {
-        Log.d(TAG, "Sevice callbacks OK");
-        textView.setText("Service callbacks test");
-        mainService.startScan();
+    public void setDebugMessage(String msg) {
+        if (MainService.isWorking())debugInfo.setText(msg);
     }
 
-    @Override
-    public void printWifi(String msg) {
-        textView.setText(msg);
-    }
 }
