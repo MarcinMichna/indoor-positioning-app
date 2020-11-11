@@ -145,6 +145,9 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
         areaName.setActivated(false);
         startButton.setActivated(false);
+
+        if (MainService.isWorking()) startButton.setText(R.string.start);
+        else startButton.setText(R.string.stop);
     }
 
     ////////////////////////////
@@ -157,7 +160,10 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     public void onAddAreaButtonClick(View v) {
-
+        MainService.setWorking(false);
+        Intent intent = new Intent(this, AreaCreationActivity.class);
+        intent.putExtra("areaName", areaName.getText());
+        startActivity(intent);
     }
 
     /////////////////////////

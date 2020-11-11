@@ -10,7 +10,7 @@ import android.util.Log;
 
 import java.util.List;
 
-import pl.michnam.app.core.AppConfig;
+import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.service.MainService;
 import pl.michnam.app.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
@@ -29,7 +29,10 @@ public class WifiScan {
                     handleScanResults(results, serviceCallbacks);
                 } else Log.w(Tag.WIFI, "WIFI - error while receiving scan results");
                 if (MainService.isWorking()) scanLoop(context);
-                else Log.i(Tag.WIFI, "WIFI - Stopping Scan");
+                else {
+                    Log.i(Tag.WIFI, "WIFI - Stopping Scan");
+                    context.unregisterReceiver(this);
+                }
             }
         };
 
@@ -50,7 +53,7 @@ public class WifiScan {
                         if (!successfulScan) Log.i(Tag.WIFI, "WIFI - Scan while starting scanning");
                     }
                 },
-                AppConfig.wifiScanWaitTime * 1000
+                AppConfig.wifiScanWaitTime
         );
 
     }

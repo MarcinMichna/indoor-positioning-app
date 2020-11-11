@@ -24,8 +24,7 @@ public class App extends Application {
         startServiceIfNotRunning();
     }
 
-    private void createNotificationChannel()
-    {
+    private void createNotificationChannel() {
         NotificationChannel serviceChannel = new NotificationChannel(CHANNEL_ID, "Indoor Positioning", NotificationManager.IMPORTANCE_HIGH);
         NotificationManager manager = getSystemService(NotificationManager.class);
         manager.createNotificationChannel(serviceChannel);
@@ -47,8 +46,7 @@ public class App extends Application {
         return false;
     }
 
-    public static App getInstance()
-    {
+    public static App getInstance() {
         return instance;
     }
 }
