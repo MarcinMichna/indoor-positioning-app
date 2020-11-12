@@ -3,7 +3,7 @@
     <string name="stop">STOP</string>
     <string name="start">START</string>
     <string name="finishButton">Finish</string>
-    <string name="newAreaLabel">Adding new area</string>
+    <string name="newAreaLabel">Adding new area\nSelect wifi to be used:</string>
     <string name="startButton">Start</string>
     <string name="configure_new_area">Configure new Area</string>
     <string name="new_area_name">New area name</string>

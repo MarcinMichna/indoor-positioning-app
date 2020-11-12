@@ -11,8 +11,8 @@ import android.util.Log;
 import java.util.List;
 
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.service.MainService;
-import pl.michnam.app.service.ServiceCallbacks;
+import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
 
 public class WifiScan {

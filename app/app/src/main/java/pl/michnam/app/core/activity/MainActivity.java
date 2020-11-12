@@ -1,4 +1,4 @@
-package pl.michnam.app;
+package pl.michnam.app.core.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,8 +23,9 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 
-import pl.michnam.app.service.MainService;
-import pl.michnam.app.service.ServiceCallbacks;
+import pl.michnam.app.R;
+import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
 
 public class MainActivity extends AppCompatActivity implements ServiceCallbacks {

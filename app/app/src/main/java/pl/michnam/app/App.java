@@ -9,7 +9,7 @@ import android.util.Log;
 
 import androidx.core.content.ContextCompat;
 
-import pl.michnam.app.service.MainService;
+import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.util.Tag;
 
 public class App extends Application {
@@ -41,7 +41,7 @@ public class App extends Application {
     private boolean isServiceRunning() {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
-            if ("pl.michnam.app.service.MainService".equals(service.service.getClassName()))
+            if ("pl.michnam.app.core.service.MainService".equals(service.service.getClassName()))
                 return true;
         return false;
     }

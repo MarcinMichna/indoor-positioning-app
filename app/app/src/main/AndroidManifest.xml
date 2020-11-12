@@ -18,8 +18,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
-        <activity android:name=".AreaCreationActivity"></activity>
-        <activity android:name=".MainActivity">
+        <activity android:name=".core.activity.AreaCreationActivity"></activity>
+        <activity android:name=".core.activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".service.MainService" />
+        <service android:name=".core.service.MainService" />
     </application>
 
 </manifest>
