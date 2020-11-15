@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -91,10 +92,32 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     //////////////////////////////
     //// PERMISSIONS HANDLING ////
     //////////////////////////////
+    private BluetoothAdapter btAdapter;
 
-    private void handlePermissions(){
+    private void handlePermissions() {
+        checkBtSupport();
         requestPermissionIfNeeded();
         handleLocation();
+        if (!btAdapter.isEnabled()) {
+            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBT, 13 );
+        }
+    }
+
+    private void checkBtSupport() {
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btAdapter == null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Not compatible")
+                    .setMessage("Your phone does not support Bluetooth")
+                    .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            System.exit(0);
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
     }
 
     private void requestPermissionIfNeeded() {
@@ -147,8 +170,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         areaName.setActivated(false);
         startButton.setActivated(false);
 
-        if (MainService.isWorking()) startButton.setText(R.string.start);
-        else startButton.setText(R.string.stop);
+        if (MainService.isWorking()) startButton.setText(R.string.stop);
+        else startButton.setText(R.string.start);
     }
 
     ////////////////////////////
@@ -156,14 +179,14 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ////////////////////////////
     public void onStartButtonClick(View v) {
         adjustStartButtonText();
-        if (MainService.isWorking()) mainService.startWifiScan();
+        if (MainService.isWorking()) mainService.startScan();
         else debugInfo.setText("");
     }
 
     public void onAddAreaButtonClick(View v) {
-        MainService.setWorking(false);
+        mainService.stopScan();
         Intent intent = new Intent(this, AreaCreationActivity.class);
-        intent.putExtra("areaName", areaName.getText());
+        intent.putExtra("areaName", areaName.getText().toString().trim());
         startActivity(intent);
     }
 
@@ -173,11 +196,11 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     private void adjustStartButtonText() {
         if (MainService.isWorking()) {
             startButton.setText(R.string.start);
-            MainService.setWorking(false);
+            mainService.stopScan();
         }
         else {
             startButton.setText(R.string.stop);
-            MainService.setWorking(true);
+            mainService.startScan();
         }
     }
 

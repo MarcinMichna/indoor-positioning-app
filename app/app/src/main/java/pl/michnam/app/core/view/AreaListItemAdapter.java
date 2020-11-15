@@ -1,4 +1,4 @@
-package pl.michnam.app.util;
+package pl.michnam.app.core.view;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -14,7 +14,7 @@ import androidx.annotation.Nullable;
 import java.util.List;
 
 import pl.michnam.app.R;
-import pl.michnam.app.core.model.AreaItemList;
+import pl.michnam.app.core.view.AreaItemList;
 
 public class AreaListItemAdapter extends ArrayAdapter<AreaItemList> {
     public AreaListItemAdapter(@NonNull Context context, int resource, @NonNull List<AreaItemList> objects) {

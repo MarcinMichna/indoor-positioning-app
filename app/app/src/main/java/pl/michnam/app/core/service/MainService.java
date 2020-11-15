@@ -28,14 +28,18 @@ public class MainService extends Service {
         return START_NOT_STICKY;
     }
 
-    public void startWifiScan() {
+    public void startScan() {
+        working = true;
         WifiScan.setupWifiScan(this, serviceCallbacks);
+    }
+
+    public void stopScan() {
+        working = false;
     }
 
     /////////////////////////////////
     /////// SERVICE UTILS ///////////
     /////////////////////////////////
-
     public void setServiceCallbacks(ServiceCallbacks serviceCallbacks) {
         this.serviceCallbacks = serviceCallbacks;
     }
@@ -56,7 +60,7 @@ public class MainService extends Service {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("You are currently in: area 51")
+                .setContentTitle("Start scanning to see your location!")
                 .setSmallIcon(R.drawable.flag)
                 .setContentIntent(pendingIntent).build();
 
@@ -69,9 +73,5 @@ public class MainService extends Service {
 
     public static boolean isWorking() {
         return working;
-    }
-
-    public static void setWorking(boolean working) {
-        MainService.working = working;
     }
 }

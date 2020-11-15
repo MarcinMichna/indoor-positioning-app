@@ -1,8 +1,8 @@
-package pl.michnam.app.core.model;
+package pl.michnam.app.core.view;
 
 public class AreaItemList {
     private String name;
-    private int avgRssi;
+    private String address;
     private int minRssi;
     private int maxRssi;
     private boolean isChecked;
@@ -10,14 +10,13 @@ public class AreaItemList {
 
     public AreaItemList(String name) {
         this.name = name;
-        this.avgRssi = 0;
         this.minRssi = 0;
         this.maxRssi = 0;
     }
 
-    public AreaItemList(String name, int avgRssi, int minRssi, int maxRssi, boolean isChecked, boolean bt) {
+    public AreaItemList(String name, String address, int minRssi, int maxRssi, boolean isChecked, boolean bt) {
         this.name = name;
-        this.avgRssi = avgRssi;
+        this.address = address;
         this.minRssi = minRssi;
         this.maxRssi = maxRssi;
         this.isChecked = isChecked;
@@ -26,7 +25,7 @@ public class AreaItemList {
 
     @Override
     public String toString() {
-        return name + ", avg: " + avgRssi + " (" + minRssi + " to " + maxRssi + ")";
+        return name + ", (" + minRssi + " to " + maxRssi + ")";
     }
 
     public boolean isBt() {
@@ -53,14 +52,6 @@ public class AreaItemList {
         this.name = name;
     }
 
-    public int getAvgRssi() {
-        return avgRssi;
-    }
-
-    public void setAvgRssi(int avgRssi) {
-        this.avgRssi = avgRssi;
-    }
-
     public int getMinRssi() {
         return minRssi;
     }
@@ -75,5 +66,13 @@ public class AreaItemList {
 
     public void setMaxRssi(int maxRssi) {
         this.maxRssi = maxRssi;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

@@ -5,4 +5,6 @@ public class Tag {
     public static String UI = "inpoUI";
     public static String SERVICE = "inpoSERV";
     public static String WIFI = "inpoWIFI";
+    public static String DB = "inpoDB";
+    public static String AREA = "inpoAREA";
 }
