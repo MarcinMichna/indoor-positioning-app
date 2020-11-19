@@ -3,14 +3,16 @@ package pl.michnam.app.sql.entity;
 public class AreaData {
     private int id;
     private String name;
+    private String address;
     private String type;
     private int minRssi;
     private int maxRssi;
     private String areaName;
 
-    public AreaData(int id, String name, String type, int minRssi, int maxRssi, String areaName) {
+    public AreaData(int id, String name, String address, String type, int minRssi, int maxRssi, String areaName) {
         this.id = id;
         this.name = name;
+        this.address = address;
         this.type = type;
         this.minRssi = minRssi;
         this.maxRssi = maxRssi;

@@ -7,4 +7,5 @@ public class Tag {
     public static String WIFI = "inpoWIFI";
     public static String DB = "inpoDB";
     public static String AREA = "inpoAREA";
+    public static String ANALYZE = "inpoANALYZE";
 }

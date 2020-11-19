@@ -1,8 +1,10 @@
 package pl.michnam.app.core.service;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
@@ -10,6 +12,8 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import pl.michnam.app.App;
+import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.R;
 import pl.michnam.app.scan.WifiScan;
@@ -30,7 +34,7 @@ public class MainService extends Service {
 
     public void startScan() {
         working = true;
-        WifiScan.setupWifiScan(this, serviceCallbacks);
+        WifiScan.startWifiScan(this, serviceCallbacks);
     }
 
     public void stopScan() {
@@ -60,11 +64,11 @@ public class MainService extends Service {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Start scanning to see your location!")
+                .setContentTitle(getString(R.string.defaultNotificationText))
                 .setSmallIcon(R.drawable.flag)
                 .setContentIntent(pendingIntent).build();
 
-        startForeground(364, notification);
+        startForeground(AppConfig.mainNotificationId, notification);
     }
 
     ///////////////////////////

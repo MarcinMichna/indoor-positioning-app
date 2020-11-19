@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.view.AreaItemList;
@@ -70,10 +71,9 @@ public class DbManager extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         ArrayList<AreaData> results = new ArrayList<>();
 
-        String query = "select * from " + AREA + " where " + AREA_AREA_NAME + " = '" + areaName  + "'";
+        String query = "select * from " + AREA + " where " + AREA_AREA_NAME + " = '" + areaName + "'";
         @SuppressLint("Recycle") Cursor res = db.rawQuery(query, null);
         res.moveToFirst();
-
 
         int id;
         String name;
@@ -90,7 +90,7 @@ public class DbManager extends SQLiteOpenHelper {
             minRssi = res.getInt(res.getColumnIndex(AREA_MIN_RSSI));
             maxRssi = res.getInt(res.getColumnIndex(AREA_MAX_RSSI));
 
-            results.add(new AreaData(id, name, type, minRssi, maxRssi, areaName));
+            results.add(new AreaData(id, name, address, type, minRssi, maxRssi, areaName));
             res.moveToNext();
         }
 
@@ -105,11 +105,24 @@ public class DbManager extends SQLiteOpenHelper {
         @SuppressLint("Recycle") Cursor res = db.rawQuery(query, null);
         res.moveToFirst();
 
-//        while (!res.isAfterLast()) {
-//            results.add(res.getString(res.getColumnIndex(AREA_AREA_NAME)))
-//        }
+
+        while (!res.isAfterLast()) {
+            results.add(res.getString(res.getColumnIndex(AREA_AREA_NAME)));
+            res.moveToNext();
+        }
 
         return results;
     }
+
+    public HashMap<String, ArrayList<AreaData>> getAllAreasInfo() {
+        HashMap<String, ArrayList<AreaData>> res = new HashMap<>();
+
+        for (String area : getAreasList()) {
+            res.put(area, getAreaData(area));
+        }
+
+        return res;
+    }
+
 
 }

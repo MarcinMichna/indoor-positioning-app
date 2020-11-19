@@ -78,9 +78,18 @@ public class AreaCreationActivity extends AppCompatActivity {
         areaScanActive = false;
 
         ArrayList<AreaItemList> insertToDb = new ArrayList<>();
-        for (AreaItemList item : itemsToShow) {
+//        for (AreaItemList item : itemsToShow) {
+//            if (item.isChecked()) insertToDb.add(item);
+//        }
+
+        AreaItemList item;
+        for (int i = 0; i < areaListAdapter.getCount(); i++) {
+            item = areaListAdapter.getItem(i);
             if (item.isChecked()) insertToDb.add(item);
         }
+
+
+
         DbManager dbManager = new DbManager(this);
         dbManager.addNewArea(insertToDb, areaName);
 

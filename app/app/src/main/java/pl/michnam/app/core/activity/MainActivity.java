@@ -22,11 +22,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import pl.michnam.app.R;
+import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
+import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.util.Tag;
 
 public class MainActivity extends AppCompatActivity implements ServiceCallbacks {
@@ -48,7 +51,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     private void onReady() {
-
+        Log.i(Tag.CORE, "Updating areas list");
+        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
     }
 
     ////////////////////////////
@@ -178,6 +182,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW CONTROLLER //////
     ////////////////////////////
     public void onStartButtonClick(View v) {
+        new DbManager(this).getAreasList();
         adjustStartButtonText();
         if (MainService.isWorking()) mainService.startScan();
         else debugInfo.setText("");
