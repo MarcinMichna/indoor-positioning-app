@@ -21,7 +21,7 @@ import java.util.List;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.core.view.AreaItemList;
+import pl.michnam.app.core.view.AreaItem;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.core.view.AreaListItemAdapter;
 import pl.michnam.app.util.Tag;
@@ -35,7 +35,7 @@ public class AreaCreationActivity extends AppCompatActivity {
     private Button finishButton;
 
     private AreaListItemAdapter areaListAdapter;
-    private ArrayList<AreaItemList> itemsToShow = new ArrayList<>();
+    private ArrayList<AreaItem> itemsToShow = new ArrayList<>();
     private HashMap<String, ArrayList<ScanResult>> allWifi = new HashMap<>();
 
     @Override
@@ -76,19 +76,13 @@ public class AreaCreationActivity extends AppCompatActivity {
 
     public void onFinishClicked(View v) {
         areaScanActive = false;
+        ArrayList<AreaItem> insertToDb = new ArrayList<>();
 
-        ArrayList<AreaItemList> insertToDb = new ArrayList<>();
-//        for (AreaItemList item : itemsToShow) {
-//            if (item.isChecked()) insertToDb.add(item);
-//        }
-
-        AreaItemList item;
+        AreaItem item;
         for (int i = 0; i < areaListAdapter.getCount(); i++) {
             item = areaListAdapter.getItem(i);
             if (item.isChecked()) insertToDb.add(item);
         }
-
-
 
         DbManager dbManager = new DbManager(this);
         dbManager.addNewArea(insertToDb, areaName);
@@ -158,10 +152,10 @@ public class AreaCreationActivity extends AppCompatActivity {
             for (int i = 0; i < itemsToShow.size(); i++) {
                 if (itemsToShow.get(i).getName() == key) found = true;
             }
-            if (!found) itemsToShow.add(new AreaItemList(key));
+            if (!found) itemsToShow.add(new AreaItem(key));
         }
         //Log.d(Tag.AREA,"Size of item to show: " + itemsToShow.size());
-        for (AreaItemList item : itemsToShow) {
+        for (AreaItem item : itemsToShow) {
             List<ScanResult> results = allWifi.get(item.getName());
             int min = results.get(0).level;
             int max = results.get(0).level;

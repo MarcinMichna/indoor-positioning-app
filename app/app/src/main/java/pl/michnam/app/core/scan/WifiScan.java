@@ -1,4 +1,4 @@
-package pl.michnam.app.scan;
+package pl.michnam.app.core.scan;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -68,12 +68,5 @@ public class WifiScan {
 
     private static void handleScanResults(List<ScanResult> results, ServiceCallbacks serviceCallbacks, Context context) {
         AreaAnalysis.getInstance().updateLocation(results, context, serviceCallbacks);
-        //if (serviceCallbacks != null) serviceCallbacks.setDebugMessage("");
-    }
-
-    public static String convertTime(long time){
-        Date date = new Date(time);
-        Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
-        return format.format(date);
     }
 }

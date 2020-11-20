@@ -1,6 +1,6 @@
 package pl.michnam.app.core.view;
 
-public class AreaItemList {
+public class AreaItem {
     private String name;
     private String address;
     private int minRssi;
@@ -8,13 +8,13 @@ public class AreaItemList {
     private boolean isChecked;
     private boolean bt;
 
-    public AreaItemList(String name) {
+    public AreaItem(String name) {
         this.name = name;
         this.minRssi = 0;
         this.maxRssi = 0;
     }
 
-    public AreaItemList(String name, String address, int minRssi, int maxRssi, boolean isChecked, boolean bt) {
+    public AreaItem(String name, String address, int minRssi, int maxRssi, boolean isChecked, boolean bt) {
         this.name = name;
         this.address = address;
         this.minRssi = minRssi;

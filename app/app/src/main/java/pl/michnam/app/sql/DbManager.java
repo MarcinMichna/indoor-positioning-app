@@ -7,12 +7,15 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.core.view.AreaItemList;
+import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.view.AreaItem;
 import pl.michnam.app.sql.entity.AreaData;
 import pl.michnam.app.util.Tag;
 
@@ -52,10 +55,10 @@ public class DbManager extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void addNewArea(ArrayList<AreaItemList> data, String areaName) {
+    public void addNewArea(ArrayList<AreaItem> data, String areaName) {
         Log.i(Tag.DB, "Adding " + data.size() + " items to db");
         SQLiteDatabase db = this.getWritableDatabase();
-        for (AreaItemList item : data) {
+        for (AreaItem item : data) {
             ContentValues contentValues = new ContentValues();
             contentValues.put(AREA_AREA_NAME, areaName);
             contentValues.put(AREA_NAME, item.getName());
@@ -120,8 +123,15 @@ public class DbManager extends SQLiteOpenHelper {
         for (String area : getAreasList()) {
             res.put(area, getAreaData(area));
         }
-
         return res;
+    }
+
+    public void resetAreas(Context context) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "DELETE FROM " + AREA;
+        db.execSQL(query);
+
+        Toast.makeText(context, context.getString(R.string.cleared_areas), Toast.LENGTH_LONG).show();
     }
 
 

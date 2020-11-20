@@ -14,17 +14,16 @@ import androidx.annotation.Nullable;
 import java.util.List;
 
 import pl.michnam.app.R;
-import pl.michnam.app.core.view.AreaItemList;
 
-public class AreaListItemAdapter extends ArrayAdapter<AreaItemList> {
-    public AreaListItemAdapter(@NonNull Context context, int resource, @NonNull List<AreaItemList> objects) {
+public class AreaListItemAdapter extends ArrayAdapter<AreaItem> {
+    public AreaListItemAdapter(@NonNull Context context, int resource, @NonNull List<AreaItem> objects) {
         super(context, resource, objects);
     }
 
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        AreaItemList areaListItem = getItem(position);
+        AreaItem areaListItem = getItem(position);
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.area_list, parent, false);
         }

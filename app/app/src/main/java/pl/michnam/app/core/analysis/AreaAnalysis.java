@@ -34,6 +34,7 @@ public class AreaAnalysis {
 
     public void updateAreas(HashMap<String, ArrayList<AreaData>> areaData) {
         this.areas = areaData;
+        Log.i(Tag.CORE, "Updated areas list");
     }
 
     public void disable(Context context) {
@@ -57,78 +58,79 @@ public class AreaAnalysis {
             if (actualTimestamp > scanTimestamp + AppConfig.maxScanAge) currentRes.remove(i);
         }
 
-
-        // set matches in all areas to 0
-        for (String key : areas.keySet()) {
-            matchesInAreas.put(key, 0);
-        }
-
-
-        // calculate avg signal strength
-        for (ScanResult i : currentRes) {
-            if (strengthList.containsKey(i.SSID))
-                strengthList.get(i.SSID).add(i.level);
-            else strengthList.put(i.SSID, new ArrayList<>(Collections.singletonList(i.level)));
-        }
-
-        for (String key : strengthList.keySet()) {
-            avgStrength.put(key, calculateAverage(strengthList.get(key)));
-        }
+        if (AppConfig.minNumberOfSignalsToAnalyse < currentRes.size()) {
+            // set matches in all areas to 0
+            for (String key : areas.keySet()) {
+                matchesInAreas.put(key, 0);
+            }
 
 
-        // set number of matching ranges
-        for (String area : areas.keySet()) {
-            ArrayList<AreaData> areaInfo = areas.get(area);
-            for (int i = 0; i < areaInfo.size(); i++) {
-                AreaData singleInfo = areaInfo.get(i);
-                if (avgStrength.containsKey(singleInfo.getName())) {
-                    double avgStr = avgStrength.get(singleInfo.getName());
-                    if (avgStr > singleInfo.getMinRssi() && avgStr < singleInfo.getMaxRssi()) {
-                        matchesInAreas.put(area, matchesInAreas.get(area) + 1);
+            // calculate avg signal strength
+            for (ScanResult i : currentRes) {
+                if (strengthList.containsKey(i.SSID))
+                    strengthList.get(i.SSID).add(i.level);
+                else strengthList.put(i.SSID, new ArrayList<>(Collections.singletonList(i.level)));
+            }
+
+            for (String key : strengthList.keySet()) {
+                avgStrength.put(key, calculateAverage(strengthList.get(key)));
+            }
+
+
+            // set number of matching ranges
+            for (String area : areas.keySet()) {
+                ArrayList<AreaData> areaInfo = areas.get(area);
+                for (int i = 0; i < areaInfo.size(); i++) {
+                    AreaData singleInfo = areaInfo.get(i);
+                    if (avgStrength.containsKey(singleInfo.getName())) {
+                        double avgStr = avgStrength.get(singleInfo.getName());
+                        if (avgStr > singleInfo.getMinRssi() && avgStr < singleInfo.getMaxRssi()) {
+                            matchesInAreas.put(area, matchesInAreas.get(area) + 1);
+                        }
+
+
                     }
-
-
                 }
             }
-        }
 
 
-        // find best matching area
-        int max = 0;
-        String bestAreaMatch = "";
-        for (String key : matchesInAreas.keySet()) {
-            if (matchesInAreas.get(key) > max) {
-                max = matchesInAreas.get(key);
-                bestAreaMatch = key;
+            // find best matching area
+            int max = 0;
+            String bestAreaMatch = "";
+            for (String key : matchesInAreas.keySet()) {
+                if (matchesInAreas.get(key) > max) {
+                    max = matchesInAreas.get(key);
+                    bestAreaMatch = key;
+                }
             }
-        }
 
 
-        // if area changed, update notification
-        if (!currentArea.equals(bestAreaMatch)) {
-            currentArea = bestAreaMatch;
-            Log.i(Tag.ANALYZE, "Entered new area: " + bestAreaMatch);
-            updateNotificationArea(bestAreaMatch, context);
-        }
+            // if area changed, update notification
+            if (!currentArea.equals(bestAreaMatch)) {
+                currentArea = bestAreaMatch;
+                Log.i(Tag.ANALYZE, "Entered new area: " + bestAreaMatch);
+                updateNotificationArea(context.getString(R.string.notif_in_area) + bestAreaMatch, context);
+            }
 
-        //DEBUG
-        if (callbacks != null) {
-            StringBuilder info = new StringBuilder();
-            for (String area : matchesInAreas.keySet()) {
-                info.append(area).append(": ");
-                info.append(matchesInAreas.get(area));
-                info.append("\n");
-                callbacks.setDebugMessage(info.toString());
-                //Log.d(Tag.ANALYZE, area + ": " + matchesInAreas.get(area));
+            //DEBUG
+            if (callbacks != null) {
+                StringBuilder info = new StringBuilder();
+                for (String area : matchesInAreas.keySet()) {
+                        info.append(area).append(": ");
+                        info.append(matchesInAreas.get(area));
+                        info.append("\n");
+                        callbacks.setDebugMessage(info.toString());
+                    //Log.d(Tag.ANALYZE, area + ": " + matchesInAreas.get(area));
+                }
             }
         }
     }
 
-    private void updateNotificationArea(String newArea, Context context) {
+    private void updateNotificationArea(String msg, Context context) {
         Intent notificationIntent = new Intent(context, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setContentTitle("You are currently in area: " + newArea)
+                .setContentTitle(msg)
                 .setSmallIcon(R.drawable.flag)
                 .setContentIntent(pendingIntent).build();
 

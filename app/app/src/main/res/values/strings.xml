@@ -3,9 +3,12 @@
     <string name="stop">STOP</string>
     <string name="start">START</string>
     <string name="finishButton">Finish</string>
-    <string name="newAreaLabel">Adding new area\nSelect wifi to be used:</string>
-    <string name="startButton">Start</string>
+    <string name="newAreaLabel">Adding new area\nSelect devices to be used:</string>
+    <string name="startButton" translatable="false">Start</string>
     <string name="configure_new_area">Configure new Area</string>
     <string name="new_area_name">New area name</string>
     <string name="defaultNotificationText">Start scanning to see your location!</string>
+    <string name="clear_areas">Clear areas</string>
+    <string name="cleared_areas">CLEARED AREAS</string>
+    <string name="notif_in_area">"You are in: "</string>
 </resources>

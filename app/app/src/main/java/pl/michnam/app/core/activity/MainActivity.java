@@ -22,7 +22,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import pl.michnam.app.R;
@@ -51,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     private void onReady() {
-        Log.i(Tag.CORE, "Updating areas list");
+        Log.i(Tag.DB, "Updating areas list");
         AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
     }
 
@@ -76,9 +75,6 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
             boundService = false;
         }
     };
-
-
-
 
     private void bindServiceConnection() {
         Intent intent = new Intent(this, MainService.class);
@@ -131,8 +127,6 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Log.d(Tag.UI, "Permission requestCode: " + requestCode);
-        Log.d(Tag.UI, Arrays.asList(grantResults).get(0)[0] + "");
         if (requestCode == 1) {
             if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED) bindServiceConnection();
             else requestPermissionIfNeeded();
@@ -162,12 +156,14 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     /////////////////
     private Button startButton;
     private Button areaButton;
+    private Button resetAreasButton;
     private TextView debugInfo;
     private EditText areaName;
 
     private void initView() {
         startButton = findViewById(R.id.startButton);
         areaButton = findViewById(R.id.areaButton);
+        resetAreasButton = findViewById(R.id.resetAreas);
         debugInfo = findViewById(R.id.debugInfo);
         areaName = findViewById(R.id.areaName);
 
@@ -182,10 +178,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW CONTROLLER //////
     ////////////////////////////
     public void onStartButtonClick(View v) {
-        new DbManager(this).getAreasList();
-        adjustStartButtonText();
-        if (MainService.isWorking()) mainService.startScan();
-        else debugInfo.setText("");
+        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
+        updateButtonAndService();
     }
 
     public void onAddAreaButtonClick(View v) {
@@ -195,11 +189,17 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         startActivity(intent);
     }
 
+    public void onResetClicked(View v) {
+        if (MainService.isWorking()) onStartButtonClick(v);
+        new DbManager(this).resetAreas(this);
+    }
+
     /////////////////////////
     ///// VIEW HELPERS //////
     /////////////////////////
-    private void adjustStartButtonText() {
+    private void updateButtonAndService() {
         if (MainService.isWorking()) {
+            debugInfo.setText("");
             startButton.setText(R.string.start);
             mainService.stopScan();
         }
