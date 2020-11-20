@@ -1,4 +1,4 @@
-package pl.michnam.app;
+package pl.michnam.app.core.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -23,8 +24,11 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 
-import pl.michnam.app.service.MainService;
-import pl.michnam.app.service.ServiceCallbacks;
+import pl.michnam.app.R;
+import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.core.service.ServiceCallbacks;
+import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.util.Tag;
 
 public class MainActivity extends AppCompatActivity implements ServiceCallbacks {
@@ -46,7 +50,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     private void onReady() {
-
+        Log.i(Tag.DB, "Updating areas list");
+        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
     }
 
     ////////////////////////////
@@ -71,9 +76,6 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         }
     };
 
-
-
-
     private void bindServiceConnection() {
         Intent intent = new Intent(this, MainService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -90,10 +92,32 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     //////////////////////////////
     //// PERMISSIONS HANDLING ////
     //////////////////////////////
+    private BluetoothAdapter btAdapter;
 
-    private void handlePermissions(){
+    private void handlePermissions() {
+        checkBtSupport();
         requestPermissionIfNeeded();
         handleLocation();
+        if (!btAdapter.isEnabled()) {
+            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBT, 13 );
+        }
+    }
+
+    private void checkBtSupport() {
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btAdapter == null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Not compatible")
+                    .setMessage("Your phone does not support Bluetooth")
+                    .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            System.exit(0);
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
     }
 
     private void requestPermissionIfNeeded() {
@@ -103,8 +127,6 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Log.d(Tag.UI, "Permission requestCode: " + requestCode);
-        Log.d(Tag.UI, Arrays.asList(grantResults).get(0)[0] + "");
         if (requestCode == 1) {
             if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED) bindServiceConnection();
             else requestPermissionIfNeeded();
@@ -134,43 +156,56 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     /////////////////
     private Button startButton;
     private Button areaButton;
+    private Button resetAreasButton;
     private TextView debugInfo;
     private EditText areaName;
 
     private void initView() {
         startButton = findViewById(R.id.startButton);
         areaButton = findViewById(R.id.areaButton);
+        resetAreasButton = findViewById(R.id.resetAreas);
         debugInfo = findViewById(R.id.debugInfo);
         areaName = findViewById(R.id.areaName);
 
         areaName.setActivated(false);
         startButton.setActivated(false);
+
+        if (MainService.isWorking()) startButton.setText(R.string.stop);
+        else startButton.setText(R.string.start);
     }
 
     ////////////////////////////
     ///// VIEW CONTROLLER //////
     ////////////////////////////
     public void onStartButtonClick(View v) {
-        adjustStartButtonText();
-        if (MainService.isWorking()) mainService.startWifiScan();
-        else debugInfo.setText("");
+        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
+        updateButtonAndService();
     }
 
     public void onAddAreaButtonClick(View v) {
+        mainService.stopScan();
+        Intent intent = new Intent(this, AreaCreationActivity.class);
+        intent.putExtra("areaName", areaName.getText().toString().trim());
+        startActivity(intent);
+    }
 
+    public void onResetClicked(View v) {
+        if (MainService.isWorking()) onStartButtonClick(v);
+        new DbManager(this).resetAreas(this);
     }
 
     /////////////////////////
     ///// VIEW HELPERS //////
     /////////////////////////
-    private void adjustStartButtonText() {
+    private void updateButtonAndService() {
         if (MainService.isWorking()) {
+            debugInfo.setText("");
             startButton.setText(R.string.start);
-            MainService.setWorking(false);
+            mainService.stopScan();
         }
         else {
             startButton.setText(R.string.stop);
-            MainService.setWorking(true);
+            mainService.startScan();
         }
     }
 

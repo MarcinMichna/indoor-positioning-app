@@ -1,4 +1,4 @@
-package pl.michnam.app.scan;
+package pl.michnam.app.core.scan;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -6,18 +6,25 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.os.SystemClock;
 import android.util.Log;
 
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import pl.michnam.app.core.AppConfig;
-import pl.michnam.app.service.MainService;
-import pl.michnam.app.service.ServiceCallbacks;
+import pl.michnam.app.config.AppConfig;
+import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
 
 public class WifiScan {
-
-    public static void setupWifiScan(Context context, ServiceCallbacks serviceCallbacks) {
+    public static void startWifiScan(Context context, ServiceCallbacks serviceCallbacks) {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
         BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
@@ -26,10 +33,14 @@ public class WifiScan {
                 boolean noError = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
                 if (noError) {
                     List<ScanResult> results = wifiManager.getScanResults();
-                    handleScanResults(results, serviceCallbacks);
+                    handleScanResults(results, serviceCallbacks, context);
                 } else Log.w(Tag.WIFI, "WIFI - error while receiving scan results");
                 if (MainService.isWorking()) scanLoop(context);
-                else Log.i(Tag.WIFI, "WIFI - Stopping Scan");
+                else {
+                    Log.i(Tag.WIFI, "WIFI - Stopping Scan");
+                    context.unregisterReceiver(this);
+                    AreaAnalysis.getInstance().disable(context);
+                }
             }
         };
 
@@ -47,21 +58,15 @@ public class WifiScan {
                     @Override
                     public void run() {
                         boolean successfulScan = wifiManager.startScan(); // wifiScanReceiver.onReceive after scan
-                        if (!successfulScan) Log.i(Tag.WIFI, "WIFI - Scan while starting scanning");
+                        if (!successfulScan) Log.i(Tag.WIFI, "WIFI - Error while starting scanning");
                     }
                 },
-                AppConfig.wifiScanWaitTime * 1000
+                AppConfig.wifiScanWaitTime
         );
 
     }
 
-    private static void handleScanResults(List<ScanResult> results, ServiceCallbacks serviceCallbacks) {
-        StringBuilder info = new StringBuilder();
-        for (ScanResult i : results) {
-            info.append("SSID: ").append(i.SSID).append(", RSSI: ").append(i.level).append("\n");
-            //Log.v(Tag.WIFI, "SSID: " + i.SSID + ", RSSI: " + i.level);
-        }
-        if (serviceCallbacks != null) serviceCallbacks.setDebugMessage(info.toString());
-        Log.v(Tag.WIFI, "WIFI - Scan successful, got " + results.size() + " results");
+    private static void handleScanResults(List<ScanResult> results, ServiceCallbacks serviceCallbacks, Context context) {
+        AreaAnalysis.getInstance().updateLocation(results, context, serviceCallbacks);
     }
 }

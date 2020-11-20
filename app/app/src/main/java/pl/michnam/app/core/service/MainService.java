@@ -1,4 +1,4 @@
-package pl.michnam.app.service;
+package pl.michnam.app.core.service;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -6,15 +6,14 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import pl.michnam.app.MainActivity;
+import pl.michnam.app.config.AppConfig;
+import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.R;
-import pl.michnam.app.scan.WifiScan;
-import pl.michnam.app.util.Tag;
+import pl.michnam.app.core.scan.WifiScan;
 
 import static pl.michnam.app.App.CHANNEL_ID;
 
@@ -30,14 +29,18 @@ public class MainService extends Service {
         return START_NOT_STICKY;
     }
 
-    public void startWifiScan() {
-        WifiScan.setupWifiScan(this, serviceCallbacks);
+    public void startScan() {
+        working = true;
+        WifiScan.startWifiScan(this, serviceCallbacks);
+    }
+
+    public void stopScan() {
+        working = false;
     }
 
     /////////////////////////////////
     /////// SERVICE UTILS ///////////
     /////////////////////////////////
-
     public void setServiceCallbacks(ServiceCallbacks serviceCallbacks) {
         this.serviceCallbacks = serviceCallbacks;
     }
@@ -58,11 +61,11 @@ public class MainService extends Service {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("You are currently in: area 51")
+                .setContentTitle(getString(R.string.defaultNotificationText))
                 .setSmallIcon(R.drawable.flag)
                 .setContentIntent(pendingIntent).build();
 
-        startForeground(364, notification);
+        startForeground(AppConfig.mainNotificationId, notification);
     }
 
     ///////////////////////////
@@ -71,9 +74,5 @@ public class MainService extends Service {
 
     public static boolean isWorking() {
         return working;
-    }
-
-    public static void setWorking(boolean working) {
-        MainService.working = working;
     }
 }
