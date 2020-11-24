@@ -63,9 +63,11 @@ public class DbManager extends SQLiteOpenHelper {
             contentValues.put(AREA_AREA_NAME, areaName);
             contentValues.put(AREA_NAME, item.getName());
             contentValues.put(AREA_ADDR, item.getAddress());
-            contentValues.put(AREA_TYPE, "wifi"); // TODO add BT support
             contentValues.put(AREA_MIN_RSSI, item.getMinRssi());
             contentValues.put(AREA_MAX_RSSI, item.getMaxRssi());
+            if (item.isBt()) contentValues.put(AREA_TYPE, "bt");
+            else contentValues.put(AREA_TYPE, "wifi");
+
             db.insert(AREA, null, contentValues);
         }
     }

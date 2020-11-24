@@ -8,8 +8,10 @@ public class AreaItem {
     private boolean isChecked;
     private boolean bt;
 
-    public AreaItem(String name) {
+    public AreaItem(String name, boolean bt) {
         this.name = name;
+        this.bt = bt;
+        this.isChecked = true;
         this.minRssi = 0;
         this.maxRssi = 0;
     }

@@ -11,4 +11,5 @@
     <string name="clear_areas">Wyczyść obszary</string>
     <string name="cleared_areas">WYCZYSZCZONO OBSZARY</string>
     <string name="notif_in_area">"Jesteś w: "</string>
+    <string name="cancel">Anuluj</string>
 </resources>

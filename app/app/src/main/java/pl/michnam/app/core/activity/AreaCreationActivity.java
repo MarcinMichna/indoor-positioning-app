@@ -2,6 +2,10 @@ package pl.michnam.app.core.activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +13,7 @@ import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -21,6 +26,7 @@ import java.util.List;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
+import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.view.AreaItem;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.core.view.AreaListItemAdapter;
@@ -37,6 +43,7 @@ public class AreaCreationActivity extends AppCompatActivity {
     private AreaListItemAdapter areaListAdapter;
     private ArrayList<AreaItem> itemsToShow = new ArrayList<>();
     private HashMap<String, ArrayList<ScanResult>> allWifi = new HashMap<>();
+    private HashMap<String, ArrayList<android.bluetooth.le.ScanResult>> allBle = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +58,7 @@ public class AreaCreationActivity extends AppCompatActivity {
         super.onStart();
         areaScanActive = true;
         setupWifiScan();
+        startBleScan(this);
     }
 
     @Override
@@ -87,6 +95,12 @@ public class AreaCreationActivity extends AppCompatActivity {
         DbManager dbManager = new DbManager(this);
         dbManager.addNewArea(insertToDb, areaName);
 
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+    }
+
+    public void onCancelClicked(View v) {
+        areaScanActive = false;
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -137,7 +151,7 @@ public class AreaCreationActivity extends AppCompatActivity {
     }
 
     private void handleScanResults(List<ScanResult> results) {
-        addResultsToList(results);
+        addWifiResultsToList(results);
         updateListOfItems();
         areaListAdapter.notifyDataSetChanged();
 
@@ -146,30 +160,66 @@ public class AreaCreationActivity extends AppCompatActivity {
     ////////////////////////
     ///// SCAN RESULTS /////
     ////////////////////////
-    private void updateListOfItems() {
+    private synchronized void updateListOfItems() {
+        // list of wifi devices
         for (String key : allWifi.keySet()) {
             boolean found = false;
             for (int i = 0; i < itemsToShow.size(); i++) {
                 if (itemsToShow.get(i).getName() == key) found = true;
             }
-            if (!found) itemsToShow.add(new AreaItem(key));
-        }
-        //Log.d(Tag.AREA,"Size of item to show: " + itemsToShow.size());
-        for (AreaItem item : itemsToShow) {
-            List<ScanResult> results = allWifi.get(item.getName());
-            int min = results.get(0).level;
-            int max = results.get(0).level;
-            for (ScanResult result : results) {
-                if (result.level > max) max = result.level;
-                else if (result.level < min) min = result.level;
+            if (!found) {
+                itemsToShow.add(new AreaItem(key, false));
             }
-            item.setMinRssi(min);
-            item.setMaxRssi(max);
         }
 
+        // list of ble devices
+        for (String key : allBle.keySet()) {
+            boolean found = false;
+            for (int i = 0; i < itemsToShow.size(); i++) {
+                if (itemsToShow.get(i).getName() == key) found = true;
+            }
+            if (!found) {
+                itemsToShow.add(new AreaItem(key, true));
+            }
+        }
+
+
+
+
+        // update listview ranges wifi
+        for (AreaItem item : itemsToShow) {
+            if (!item.isBt()) {
+                List<ScanResult> results = allWifi.get(item.getName());
+                int min = results.get(0).level;
+                int max = results.get(0).level;
+                for (ScanResult result : results) {
+                    if (result.level > max) max = result.level;
+                    else if (result.level < min) min = result.level;
+                }
+                item.setMinRssi(min);
+                item.setMaxRssi(max);
+            }
+        }
+
+        // update listview ranges ble
+        for (AreaItem item : itemsToShow) {
+            if (item.isBt()) {
+                List<android.bluetooth.le.ScanResult> results = allBle.get(item.getName());
+                int min = results.get(0).getRssi();
+                int max = results.get(0).getRssi();
+                for (android.bluetooth.le.ScanResult result : results) {
+                    if (result.getRssi() > max) max = result.getRssi();
+                    else if (result.getRssi() < min) min = result.getRssi();
+                }
+                item.setMinRssi(min);
+                item.setMaxRssi(max);
+            }
+        }
+
+        //Log.d(Tag.UI, "Items to show: " + itemsToShow.toString());
     }
 
-    private void addResultsToList(List<ScanResult> results) {
+    private synchronized void addWifiResultsToList(List<ScanResult> results) {
         for (ScanResult i : results) {
             if (allWifi.containsKey(i.SSID))
                 allWifi.get(i.SSID).add(i);
@@ -178,12 +228,47 @@ public class AreaCreationActivity extends AppCompatActivity {
         }
     }
 
-    ////////////////////
-    ///// BLE SCAN /////
-    ////////////////////
+    ///////////////
+    ///// BLE /////
+    ///////////////
+    private  BluetoothLeScanner bleScanner;
 
-    /////////////////
-    ///// UTILS /////
-    /////////////////
+    private  final ScanCallback bleCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
+            super.onScanResult(callbackType, result);
+            Log.d(Tag.BLE, "Ble device: " + result.toString());
+            addBleResultToList(result);
+        }
+    };
+
+    private synchronized void addBleResultToList(android.bluetooth.le.ScanResult result) {
+        String id;
+        if (result.getDevice().getName() != null) id = result.getDevice().getName();
+        else id = result.getDevice().getAddress();
+
+        if (allBle.containsKey(id)) allBle.get(id).add(result);
+        else allBle.put(id, new ArrayList<>(Collections.singletonList(result)));
+    }
+
+    public void startBleScan(Context context) {
+        BluetoothManager bleManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter bleAdapter = bleManager.getAdapter();
+        bleScanner = bleAdapter.getBluetoothLeScanner();
+
+        bleScanLoop();
+    }
+
+    private void bleScanLoop() {
+        bleScanner.startScan(bleCallback);
+        Log.d(Tag.BLE, "BLE - Started scan");
+        new Handler().postDelayed(() -> {
+            bleScanner.stopScan(bleCallback);
+            Log.d(Tag.BLE, "BLE - Stopped scan");
+            if (areaScanActive) {
+                new Handler().postDelayed(this::bleScanLoop, AppConfig.bleScanWaitTime);
+            }
+        }, AppConfig.bleScanTime);
+    }
 
 }

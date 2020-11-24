@@ -28,53 +28,82 @@ import static pl.michnam.app.App.CHANNEL_ID;
 
 public class AreaAnalysis {
     private HashMap<String, ArrayList<AreaData>> areas = new HashMap<>();
-    private final ArrayList<ScanResult> currentRes = new ArrayList<>();
+    private final ArrayList<ScanResult> currentResWifi = new ArrayList<>();
+    private final ArrayList<android.bluetooth.le.ScanResult> currentResBle = new ArrayList<>();
     private String currentArea = "";
 
 
-    public void updateAreas(HashMap<String, ArrayList<AreaData>> areaData) {
+    public synchronized void updateAreas(HashMap<String, ArrayList<AreaData>> areaData) {
         this.areas = areaData;
         Log.i(Tag.CORE, "Updated areas list");
     }
 
-    public void disable(Context context) {
+    public synchronized void disable(Context context) {
         currentArea = "";
         updateNotificationArea(context.getString(R.string.defaultNotificationText), context);
     }
 
-    public void updateLocation(List<ScanResult> newResults, Context context, ServiceCallbacks callbacks) {
+    public synchronized void addResBle(android.bluetooth.le.ScanResult res) {
+        currentResBle.add(res);
+    }
+
+    public synchronized void updateLocation(List<ScanResult> newResults, Context context, ServiceCallbacks callbacks) {
         HashMap<String, ArrayList<Integer>> strengthList = new HashMap<>();
         HashMap<String, Double> avgStrength = new HashMap<>();
         HashMap<String, Integer> matchesInAreas = new HashMap<>();
 
-        // update list of locations to have only recent values
+        // update list of results to have only recent values
         Date date = new Date();
         long scanTimestamp;
         long actualTimestamp;
-        currentRes.addAll(newResults);
-        for (int i = currentRes.size() - 1; i > 0; i--) {
-            scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentRes.get(i).timestamp / 1000);
+        currentResWifi.addAll(newResults);
+
+        //wifi
+        for (int i = currentResWifi.size() - 1; i > 0; i--) {
+            scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResWifi.get(i).timestamp / 1000);
             actualTimestamp = date.getTime();
-            if (actualTimestamp > scanTimestamp + AppConfig.maxScanAge) currentRes.remove(i);
+            if (actualTimestamp > scanTimestamp + AppConfig.maxScanAge) currentResWifi.remove(i);
         }
 
-        if (AppConfig.minNumberOfSignalsToAnalyse < currentRes.size()) {
+        //ble
+        for (int i = currentResBle.size() - 1; i > 0; i--) {
+            scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResBle.get(i).getTimestampNanos() / 1000000);
+            actualTimestamp = date.getTime();
+            if (actualTimestamp > scanTimestamp + AppConfig.maxScanAge) currentResBle.remove(i);
+        }
+
+        // analyze if there is enough data
+        if (AppConfig.minNumberOfSignalsToAnalyse < currentResWifi.size() + currentResBle.size()) {
             // set matches in all areas to 0
             for (String key : areas.keySet()) {
                 matchesInAreas.put(key, 0);
             }
 
 
-            // calculate avg signal strength
-            for (ScanResult i : currentRes) {
+            // create list of rssi for wifi
+            for (ScanResult i : currentResWifi) {
                 if (strengthList.containsKey(i.SSID))
                     strengthList.get(i.SSID).add(i.level);
                 else strengthList.put(i.SSID, new ArrayList<>(Collections.singletonList(i.level)));
             }
 
+            // create list of rssi for ble
+            for (android.bluetooth.le.ScanResult i : currentResBle) {
+                String id;
+                if (i.getDevice().getName() != null) id = i.getDevice().getName();
+                else id = i.getDevice().getAddress();
+
+                if (strengthList.containsKey(id))
+                    strengthList.get(id).add(i.getRssi());
+                else strengthList.put(id, new ArrayList<>(Collections.singletonList(i.getRssi())));
+            }
+
+            // calculate avg signal strength
             for (String key : strengthList.keySet()) {
                 avgStrength.put(key, calculateAverage(strengthList.get(key)));
             }
+
+
 
 
             // set number of matching ranges
@@ -87,11 +116,10 @@ public class AreaAnalysis {
                         if (avgStr > singleInfo.getMinRssi() && avgStr < singleInfo.getMaxRssi()) {
                             matchesInAreas.put(area, matchesInAreas.get(area) + 1);
                         }
-
-
                     }
                 }
             }
+
 
 
             // find best matching area
@@ -152,8 +180,7 @@ public class AreaAnalysis {
     /////////////////////
     ///// SINGLETON /////
     /////////////////////
-    private AreaAnalysis() {
-    }
+    private AreaAnalysis() { }
 
     private static class Holder {
         private static final AreaAnalysis instance = new AreaAnalysis();

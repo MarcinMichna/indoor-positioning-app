@@ -8,4 +8,6 @@ public class Tag {
     public static String DB = "inpoDB";
     public static String AREA = "inpoAREA";
     public static String ANALYZE = "inpoANALYZE";
+    public static String BLE = "inpoBLE";
+    public static String BT = "inpoBT";
 }
