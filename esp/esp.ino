@@ -10,8 +10,12 @@
 int bleScanTime = 2; // in seconds
 
 
+const char *espName = "ESP_4";
+const char *espNameWifi = "ESP_4_WIFI";
+const char *espNameBt = "ESP_4_BT";
+
+
 // Access Point
-const char *espName = "ESP_1";
 const char *apPassword= "polska123";
 
 // Wifi connection
@@ -19,7 +23,6 @@ const char *wifiSsid = "Marcin_Krul";
 const char *wifiPassword= "M@rsik353";
 
 // Bluetooth
-
 BLEScan* bleScanner;
 
 
@@ -62,10 +65,10 @@ void loop() {
 
 void apSetup() {
   Serial.println("Setting up Wifi Access Point");
-  WiFi.softAP(espName, apPassword);
+  WiFi.softAP(espNameWifi, apPassword);
   IPAddress apIP = WiFi.softAPIP();
   Serial.print("Wifi AP ssid: ");
-  Serial.print(espName);
+  Serial.print(espNameWifi);
   Serial.print(", IP: ");
   Serial.println(apIP);
 }
@@ -90,7 +93,7 @@ void bluetoothClientSetup() {
 }
 
 void bluetoothServerSetup() {
-  BLEDevice::init(espName);
+  BLEDevice::init(espNameBt);
   BLEServer *pServer = BLEDevice::createServer();
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
