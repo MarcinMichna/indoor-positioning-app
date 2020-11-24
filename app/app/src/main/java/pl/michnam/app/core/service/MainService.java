@@ -3,6 +3,7 @@ package pl.michnam.app.core.service;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
@@ -13,6 +14,8 @@ import androidx.core.app.NotificationCompat;
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.R;
+import pl.michnam.app.core.scan.BleScan;
+import pl.michnam.app.core.scan.BtScan;
 import pl.michnam.app.core.scan.WifiScan;
 
 import static pl.michnam.app.App.CHANNEL_ID;
@@ -31,7 +34,9 @@ public class MainService extends Service {
 
     public void startScan() {
         working = true;
+
         WifiScan.startWifiScan(this, serviceCallbacks);
+        BleScan.startBleScan(this);
     }
 
     public void stopScan() {

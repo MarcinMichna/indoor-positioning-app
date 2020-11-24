@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,13 +24,20 @@ public class AreaListItemAdapter extends ArrayAdapter<AreaItem> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        AreaItem areaListItem = getItem(position);
-        if (convertView == null) {
+        if (convertView == null)
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.area_list, parent, false);
-        }
         TextView txt = convertView.findViewById(R.id.itemText);
         CheckBox checkBox = convertView.findViewById(R.id.itemCheckbox);
+        ImageView imageView = convertView.findViewById(R.id.imageView);
+
+        AreaItem areaListItem = getItem(position);
+
+        if (areaListItem.isChecked()) checkBox.setChecked(true);
+        else checkBox.setChecked(false);
+        if (areaListItem.isBt()) imageView.setImageResource(R.drawable.ic_bluetooth);
+
         txt.setText(areaListItem.toString());
+
         checkBox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
