@@ -14,6 +14,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -22,6 +25,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import pl.michnam.app.R;
@@ -100,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         handleLocation();
         if (!btAdapter.isEnabled()) {
             Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBT, 13 );
+            startActivityForResult(enableBT, 13);
         }
     }
 
@@ -121,14 +125,17 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     private void requestPermissionIfNeeded() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) bindServiceConnection();
-        else requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); // Runs onRequestPermissionsResult after user action
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            bindServiceConnection();
+        else
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); // Runs onRequestPermissionsResult after user action
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 1) {
-            if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED) bindServiceConnection();
+            if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED)
+                bindServiceConnection();
             else requestPermissionIfNeeded();
         }
     }
@@ -202,8 +209,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
             debugInfo.setText("");
             startButton.setText(R.string.start);
             mainService.stopScan();
-        }
-        else {
+        } else {
             startButton.setText(R.string.stop);
             mainService.startScan();
         }
@@ -216,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     @Override
     public void setDebugMessage(String msg) {
-        if (MainService.isWorking())debugInfo.setText(msg);
+        if (MainService.isWorking()) debugInfo.setText(msg);
     }
 
 }

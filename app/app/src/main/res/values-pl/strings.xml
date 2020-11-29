@@ -3,7 +3,7 @@
     <string name="app_name">App</string>
     <string name="defaultNotificationText">Rozpocznij skanowanie!</string>
     <string name="new_area_name">Nazwa nowego obszaru</string>
-    <string name="configure_new_area">Dodaj obszar</string>
+    <string name="configure_new_area">Dodaj</string>
     <string name="newAreaLabel">Dodawanie obszaru\nWybierz urządzenia:</string>
     <string name="finishButton">Zakończ</string>
     <string name="start">START</string>
@@ -12,4 +12,6 @@
     <string name="cleared_areas">WYCZYSZCZONO OBSZARY</string>
     <string name="notif_in_area">"Jesteś w: "</string>
     <string name="cancel">Anuluj</string>
+    <string name="hotspot_ap_name">Nazwa hotspotu</string>
+    <string name="update">ustaw</string>
 </resources>
