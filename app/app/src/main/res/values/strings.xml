@@ -33,4 +33,6 @@
     <string name="excluded_devices">Excluded devices:</string>
     <string name="best_match">You are in:</string>
     <string name="none_areas_selected">None areas selected!</string>
+    <string name="matches_in_areas">Matches in areas:</string>
+    <string name="none">None</string>
 </resources>

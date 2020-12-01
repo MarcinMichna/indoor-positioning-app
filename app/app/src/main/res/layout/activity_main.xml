@@ -19,16 +19,15 @@
         app:layout_constraintStart_toStartOf="parent" />
 
 
-    <TextView
-        android:id="@+id/debugInfo"
-        android:layout_width="339dp"
-        android:layout_height="268dp"
-        android:layout_marginBottom="32dp"
-        android:text=""
-        app:layout_constraintBottom_toTopOf="@+id/startButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent" />
+    <ListView
+        android:id="@+id/resultListView"
+        android:layout_width="354dp"
+        android:layout_height="267dp"
+        android:layout_gravity="center"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView7" />
 
     <TextView
         android:id="@+id/best_match_label"
@@ -56,7 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="@string/excluded_devices"
-        app:layout_constraintStart_toStartOf="@+id/debugInfo"
+        app:layout_constraintStart_toStartOf="@+id/resultListView"
         app:layout_constraintTop_toBottomOf="@+id/best_match_label" />
 
     <TextView
@@ -74,5 +73,14 @@
         android:layout_marginStart="32dp"
         app:layout_constraintStart_toEndOf="@+id/excluded_devices_label"
         app:layout_constraintTop_toTopOf="@+id/excluded_devices_label" />
+
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/matches_in_areas"
+        app:layout_constraintStart_toStartOf="@+id/resultListView"
+        app:layout_constraintTop_toBottomOf="@+id/excluded_devices_label" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -21,17 +21,21 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
+import pl.michnam.app.core.view.ResultListAdapter;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.util.Tag;
 
@@ -167,16 +171,28 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW //////
     /////////////////
     private Button startButton;
-    private TextView debugInfo;
+    private ListView resultListView;
+    private TextView bestMatch;
+    private TextView excludedDevices;
+
+    private ResultListAdapter resultAdapter;
+    private ArrayList<String> results;
 
     private void initView() {
         startButton = findViewById(R.id.startButton);
-        debugInfo = findViewById(R.id.debugInfo);
+        resultListView = findViewById(R.id.resultListView);
+        bestMatch = findViewById(R.id.best_match);
+        excludedDevices = findViewById(R.id.excluded_devices);
 
         startButton.setActivated(false);
 
         if (MainService.isWorking()) startButton.setText(R.string.stop);
         else startButton.setText(R.string.start);
+
+        setCurrentArea("");
+        setExcludedDevices(new ArrayList<>());
+
+        initResultList();
     }
 
     ////////////////////////////
@@ -185,18 +201,6 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     public void onStartButtonClick(View v) {
         AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
         updateButtonAndService();
-    }
-
-//    public void onAddAreaButtonClick(View v) {
-//        mainService.stopScan();
-//        Intent intent = new Intent(this, AreaCreationActivity.class);
-//        intent.putExtra("areaName", areaName.getText().toString().trim());
-//        startActivity(intent);
-//    }
-
-    public void onResetClicked(View v) {
-        if (MainService.isWorking()) onStartButtonClick(v);
-        new DbManager(this).resetAreas(this);
     }
 
     public void onSettingsClicked(View v) {
@@ -214,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     /////////////////////////
     private void updateButtonAndService() {
         if (MainService.isWorking()) {
-            debugInfo.setText("");
+            setResults(new ArrayList<>());
             startButton.setText(R.string.start);
             mainService.stopScan();
         } else {
@@ -223,13 +227,34 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         }
     }
 
+    private void initResultList() {
+        results = new ArrayList<>();
+        resultAdapter = new ResultListAdapter(this, R.layout.activity_main, results);
+        resultListView.setAdapter(resultAdapter);
+    }
+
     private void enableButtons() {
         startButton.setActivated(true);
     }
 
     @Override
-    public void setDebugMessage(String msg) {
-        if (MainService.isWorking()) debugInfo.setText(msg);
+    public void setResults(ArrayList<String> res) {
+        if (MainService.isWorking()) {
+            results.clear();
+            results.addAll(res);
+            resultAdapter.notifyDataSetChanged();
+        }
     }
 
+    @Override
+    public void setCurrentArea(String currentArea) {
+        if (currentArea.equals("")) bestMatch.setText(R.string.none);
+        else bestMatch.setText(currentArea);
+    }
+
+    @Override
+    public void setExcludedDevices(ArrayList<String> excluded) {
+        if (excluded.size() == 0) excludedDevices.setText(R.string.none);
+        else excludedDevices.setText(excluded.toString());
+    }
 }

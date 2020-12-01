@@ -251,7 +251,6 @@ public class AreaCreationActivity extends AppCompatActivity {
         @Override
         public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
             super.onScanResult(callbackType, result);
-            Log.d(Tag.BLE, "Ble device: " + result.toString());
             addBleResultToList(result);
         }
     };

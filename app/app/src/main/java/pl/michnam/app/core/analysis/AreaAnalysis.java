@@ -8,12 +8,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.wifi.ScanResult;
 import android.os.SystemClock;
+import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.util.Log;
+import android.util.Pair;
 
 import androidx.core.app.NotificationCompat;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -145,16 +148,21 @@ public class AreaAnalysis {
                 updateNotificationArea(context.getString(R.string.notif_in_area) + bestAreaMatch, context);
             }
 
-            //DEBUG
             if (callbacks != null) {
-                StringBuilder info = new StringBuilder();
-                for (String area : matchesInAreas.keySet()) {
-                        info.append(area).append(": ");
-                        info.append(matchesInAreas.get(area));
-                        info.append("\n");
-                        callbacks.setDebugMessage(info.toString());
-                    //Log.d(Tag.ANALYZE, area + ": " + matchesInAreas.get(area));
-                }
+
+                ArrayList<Pair<String, Integer>> resUnordered = new ArrayList<>();
+                for(String area: matchesInAreas.keySet())
+                    resUnordered.add(new Pair<>(area, matchesInAreas.get(area)));
+
+                resUnordered.sort(Comparator.comparing(p -> -p.second));
+
+                ArrayList<String> res = new ArrayList<>();
+                for (Pair<String, Integer> item : resUnordered)
+                    res.add(item.first + ": " + item.second);
+
+                callbacks.setResults(res);
+                callbacks.setCurrentArea(bestAreaMatch);
+                callbacks.setExcludedDevices(new ArrayList<>());
             }
         }
     }

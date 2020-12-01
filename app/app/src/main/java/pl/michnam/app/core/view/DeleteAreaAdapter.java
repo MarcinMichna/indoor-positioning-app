@@ -26,7 +26,7 @@ public class DeleteAreaAdapter extends ArrayAdapter<DeleteAreaItem> {
         if (convertView == null)
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.delete_area_list, parent, false);
 
-        TextView txt = convertView.findViewById(R.id.deleteItemText);
+        TextView txt = convertView.findViewById(R.id.resultItemText);
         CheckBox checkBox = convertView.findViewById(R.id.deleteItemCheckbox);
 
         DeleteAreaItem item = getItem(position);

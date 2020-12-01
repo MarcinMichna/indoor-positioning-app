@@ -33,4 +33,6 @@
     <string name="excluded_devices">Wykluoczne urządzenia:</string>
     <string name="best_match">Znajdujesz się w:</string>
     <string name="none_areas_selected">Nie wybrano żadnego obszaru!</string>
+    <string name="matches_in_areas">Pasujące obszary:</string>
+    <string name="none">Brak</string>
 </resources>

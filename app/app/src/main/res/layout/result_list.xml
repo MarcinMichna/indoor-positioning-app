@@ -3,14 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal">
-
-    <CheckBox
-        android:id="@+id/deleteItemCheckbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
     <TextView
-        android:id="@+id/resultItemText"
+        android:id="@+id/resultText"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
