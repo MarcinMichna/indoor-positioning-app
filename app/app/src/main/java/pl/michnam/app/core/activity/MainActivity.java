@@ -43,8 +43,13 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initView();
         handlePermissions(); // if OK, runs onReady
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initView();
     }
 
     @Override
@@ -162,19 +167,12 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW //////
     /////////////////
     private Button startButton;
-    private Button areaButton;
-    private Button resetAreasButton;
     private TextView debugInfo;
-    private EditText areaName;
 
     private void initView() {
         startButton = findViewById(R.id.startButton);
-        areaButton = findViewById(R.id.areaButton);
-        resetAreasButton = findViewById(R.id.resetAreas);
         debugInfo = findViewById(R.id.debugInfo);
-        areaName = findViewById(R.id.areaName);
 
-        areaName.setActivated(false);
         startButton.setActivated(false);
 
         if (MainService.isWorking()) startButton.setText(R.string.stop);
@@ -189,16 +187,26 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         updateButtonAndService();
     }
 
-    public void onAddAreaButtonClick(View v) {
-        mainService.stopScan();
-        Intent intent = new Intent(this, AreaCreationActivity.class);
-        intent.putExtra("areaName", areaName.getText().toString().trim());
-        startActivity(intent);
-    }
+//    public void onAddAreaButtonClick(View v) {
+//        mainService.stopScan();
+//        Intent intent = new Intent(this, AreaCreationActivity.class);
+//        intent.putExtra("areaName", areaName.getText().toString().trim());
+//        startActivity(intent);
+//    }
 
     public void onResetClicked(View v) {
         if (MainService.isWorking()) onStartButtonClick(v);
         new DbManager(this).resetAreas(this);
+    }
+
+    public void onSettingsClicked(View v) {
+        mainService.stopScan();
+        startActivity(new Intent(this, SettingsActivity.class));
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
     }
 
     /////////////////////////
@@ -217,7 +225,6 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     private void enableButtons() {
         startButton.setActivated(true);
-        areaButton.setActivated(true);
     }
 
     @Override

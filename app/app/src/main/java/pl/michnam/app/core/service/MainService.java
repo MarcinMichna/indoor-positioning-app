@@ -22,6 +22,7 @@ import static pl.michnam.app.App.CHANNEL_ID;
 
 public class MainService extends Service {
     private static boolean working;
+    private static boolean activeMode;
 
     private ServiceCallbacks serviceCallbacks;
     private final IBinder binder = new LocalBinder();

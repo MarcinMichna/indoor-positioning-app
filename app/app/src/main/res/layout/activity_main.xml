@@ -10,89 +10,69 @@
         android:id="@+id/startButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="72dp"
+        android:background="@drawable/round_button"
         android:onClick="onStartButtonClick"
         android:text="@string/startButton"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/settingsButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/areaButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:onClick="onAddAreaButtonClick"
-        android:text="@string/configure_new_area"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/areaName" />
-
-    <EditText
-        android:id="@+id/areaName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:autofillHints=""
-        android:ems="10"
-        android:hint="@string/new_area_name"
-        android:inputType="textPersonName"
-        android:text=""
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/areaButton"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
+
 
     <TextView
         android:id="@+id/debugInfo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_width="339dp"
+        android:layout_height="268dp"
+        android:layout_marginBottom="32dp"
         android:text=""
+        app:layout_constraintBottom_toTopOf="@+id/startButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/debugLabel" />
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
-        android:id="@+id/debugLabel"
+        android:id="@+id/best_match_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="DEBUG MESSAGES:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/resetAreas" />
-
-    <Button
-        android:id="@+id/resetAreas"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:onClick="onResetClicked"
-        android:text="@string/clear_areas"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/best_match"
+        app:layout_constraintStart_toStartOf="@+id/excluded_devices_label"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <EditText
-        android:id="@+id/editTextTextPersonName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:ems="10"
-        android:hint="@string/hotspot_ap_name"
-        android:inputType="textPersonName"
-        app:layout_constraintBottom_toTopOf="@+id/areaName"
-        app:layout_constraintStart_toStartOf="@+id/areaName" />
-
     <Button
-        android:id="@+id/hotsoptButton"
+        android:id="@+id/settingsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="@string/update"
-        app:layout_constraintBottom_toTopOf="@+id/areaButton"
-        app:layout_constraintStart_toStartOf="@+id/areaButton" />
+        android:layout_marginBottom="24dp"
+        android:onClick="onSettingsClicked"
+        android:text="@string/settingsButtonText"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/excluded_devices_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/excluded_devices"
+        app:layout_constraintStart_toStartOf="@+id/debugInfo"
+        app:layout_constraintTop_toBottomOf="@+id/best_match_label" />
+
+    <TextView
+        android:id="@+id/best_match"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        app:layout_constraintStart_toEndOf="@+id/best_match_label"
+        app:layout_constraintTop_toTopOf="@+id/best_match_label" />
+
+    <TextView
+        android:id="@+id/excluded_devices"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        app:layout_constraintStart_toEndOf="@+id/excluded_devices_label"
+        app:layout_constraintTop_toTopOf="@+id/excluded_devices_label" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

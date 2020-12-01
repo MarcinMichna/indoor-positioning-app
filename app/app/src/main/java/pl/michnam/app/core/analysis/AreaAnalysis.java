@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.ScanResult;
 import android.os.SystemClock;
 import android.util.Log;
@@ -22,6 +23,7 @@ import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.sql.entity.AreaData;
+import pl.michnam.app.util.Pref;
 import pl.michnam.app.util.Tag;
 
 import static pl.michnam.app.App.CHANNEL_ID;
@@ -58,18 +60,21 @@ public class AreaAnalysis {
         long actualTimestamp;
         currentResWifi.addAll(newResults);
 
+        SharedPreferences sharedPref = context.getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
+        int maxScanAge = sharedPref.getInt(Pref.scanAge, AppConfig.maxScanAge);
+
         //wifi
         for (int i = currentResWifi.size() - 1; i > 0; i--) {
             scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResWifi.get(i).timestamp / 1000);
             actualTimestamp = date.getTime();
-            if (actualTimestamp > scanTimestamp + AppConfig.maxScanAge) currentResWifi.remove(i);
+            if (actualTimestamp > scanTimestamp + maxScanAge) currentResWifi.remove(i);
         }
 
         //ble
         for (int i = currentResBle.size() - 1; i > 0; i--) {
             scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResBle.get(i).getTimestampNanos() / 1000000);
             actualTimestamp = date.getTime();
-            if (actualTimestamp > scanTimestamp + AppConfig.maxScanAge) currentResBle.remove(i);
+            if (actualTimestamp > scanTimestamp + maxScanAge) currentResBle.remove(i);
         }
 
         // analyze if there is enough data

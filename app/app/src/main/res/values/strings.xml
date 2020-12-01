@@ -3,7 +3,7 @@
     <string name="stop">STOP</string>
     <string name="start">START</string>
     <string name="finishButton">Finish</string>
-    <string name="newAreaLabel">Adding new area\nSelect devices to be used:</string>
+    <string name="newAreaLabel">New area name</string>
     <string name="startButton" translatable="false">Start</string>
     <string name="configure_new_area">Configure</string>
     <string name="new_area_name">New area name</string>
@@ -14,4 +14,23 @@
     <string name="cancel">Cancel</string>
     <string name="hotspot_ap_name">Hotspot AP name</string>
     <string name="update">update</string>
+    <string name="apply">Apply</string>
+    <string name="settings">SETTINGS</string>
+    <string name="average_signal_time">Max scan age (ms)</string>
+    <string name="add_area">Add area</string>
+    <string name="delete_area">Delete Area</string>
+    <string name="hotspot_name">Hotspot name</string>
+    <string name="active_mode">Active mode</string>
+    <string name="signal_strength_margin">Signal strength margin (db)</string>
+    <string name="settingsButtonText">Settings</string>
+    <string name="set_area_name">Set area name!</string>
+    <string name="area_exists">Area already exists</string>
+    <string name="select_devices">Select devices</string>
+    <string name="active_no_hotspot">Active mode without hotspot</string>
+    <string name="settings_error">Error parsing settings</string>
+    <string name="select_areas_to_delete">Select areas to delete</string>
+    <string name="delete">Delete</string>
+    <string name="excluded_devices">Excluded devices:</string>
+    <string name="best_match">You are in:</string>
+    <string name="none_areas_selected">None areas selected!</string>
 </resources>

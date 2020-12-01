@@ -136,5 +136,18 @@ public class DbManager extends SQLiteOpenHelper {
         Toast.makeText(context, context.getString(R.string.cleared_areas), Toast.LENGTH_LONG).show();
     }
 
+    public void deleteAreas(Context context, ArrayList<String> areas) {
+        if (areas.size() > 0) {
+            SQLiteDatabase db = this.getReadableDatabase();
+            for (String area : areas) {
+                String query = "DELETE FROM " + AREA + " WHERE " + AREA_AREA_NAME + " = '" + area + "'";
+                db.execSQL(query);
+            }
+            Log.i(Tag.DB, "Deleted areas: " + areas);
+        }
+
+
+    }
+
 
 }

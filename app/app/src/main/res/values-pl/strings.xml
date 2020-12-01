@@ -4,7 +4,7 @@
     <string name="defaultNotificationText">Rozpocznij skanowanie!</string>
     <string name="new_area_name">Nazwa nowego obszaru</string>
     <string name="configure_new_area">Dodaj</string>
-    <string name="newAreaLabel">Dodawanie obszaru\nWybierz urządzenia:</string>
+    <string name="newAreaLabel">Nazwa nowego obszaru</string>
     <string name="finishButton">Zakończ</string>
     <string name="start">START</string>
     <string name="stop">STOP</string>
@@ -14,4 +14,23 @@
     <string name="cancel">Anuluj</string>
     <string name="hotspot_ap_name">Nazwa hotspotu</string>
     <string name="update">ustaw</string>
+    <string name="apply">Zastosuj</string>
+    <string name="settings">Ustawienia</string>
+    <string name="average_signal_time">Maksymalny wiek skanu (ms)</string>
+    <string name="add_area">Dodaj obszar</string>
+    <string name="delete_area">Usuń obszar</string>
+    <string name="hotspot_name">Zazwa htospot\'u</string>
+    <string name="active_mode">Tryb aktywny</string>
+    <string name="signal_strength_margin">Margines siły sygnału (db)</string>
+    <string name="settingsButtonText">Ustawienia</string>
+    <string name="set_area_name">Ustaw nazwę obszaru!</string>
+    <string name="area_exists">Obszar już istnieje!</string>
+    <string name="select_devices">Wybierz urządzenia</string>
+    <string name="active_no_hotspot">Tryb aktywny, bez hotspot\'u</string>
+    <string name="settings_error">Błąd przy parsowaniu ustawień</string>
+    <string name="select_areas_to_delete">Wybierz obszary do usunięcia</string>
+    <string name="delete">usuń</string>
+    <string name="excluded_devices">Wykluoczne urządzenia:</string>
+    <string name="best_match">Znajdujesz się w:</string>
+    <string name="none_areas_selected">Nie wybrano żadnego obszaru!</string>
 </resources>

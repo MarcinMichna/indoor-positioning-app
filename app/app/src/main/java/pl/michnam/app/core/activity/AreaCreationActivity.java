@@ -17,7 +17,9 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,10 +37,9 @@ import pl.michnam.app.util.Tag;
 public class AreaCreationActivity extends AppCompatActivity {
     private boolean areaScanActive;
 
-    private String areaName;
-
+    private EditText areaNameView;
     private ListView listView;
-    private Button finishButton;
+
 
     private AreaListItemAdapter areaListAdapter;
     private ArrayList<AreaItem> itemsToShow = new ArrayList<>();
@@ -67,13 +68,14 @@ public class AreaCreationActivity extends AppCompatActivity {
         areaScanActive = false;
     }
 
+
+
     ///////////////////////////
     ///// VIEW CONTROLLER /////
     ///////////////////////////
     private void initView() {
         listView = findViewById(R.id.listView);
-        finishButton = findViewById(R.id.finishButton);
-        areaName = getIntent().getStringExtra("areaName");
+        areaNameView = findViewById(R.id.areaName);
     }
 
     private void initList() {
@@ -83,26 +85,38 @@ public class AreaCreationActivity extends AppCompatActivity {
     }
 
     public void onFinishClicked(View v) {
-        areaScanActive = false;
-        ArrayList<AreaItem> insertToDb = new ArrayList<>();
-
-        AreaItem item;
-        for (int i = 0; i < areaListAdapter.getCount(); i++) {
-            item = areaListAdapter.getItem(i);
-            if (item.isChecked()) insertToDb.add(item);
+        String areaName = areaNameView.getText().toString().trim();
+        ArrayList<String> areasList = new DbManager(this).getAreasList();
+        if (areaName.equals("")){
+            Toast.makeText(this, getString(R.string.set_area_name),
+                    Toast.LENGTH_LONG).show();
         }
+        else if (areasList.contains(areaName)) {
+            Toast.makeText(this, getString(R.string.area_exists),
+                    Toast.LENGTH_LONG).show();
+        }
+        else {
+            areaScanActive = false;
+            ArrayList<AreaItem> insertToDb = new ArrayList<>();
 
-        DbManager dbManager = new DbManager(this);
-        dbManager.addNewArea(insertToDb, areaName);
+            AreaItem item;
+            for (int i = 0; i < areaListAdapter.getCount(); i++) {
+                item = areaListAdapter.getItem(i);
+                if (item.isChecked()) insertToDb.add(item);
+            }
 
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+            DbManager dbManager = new DbManager(this);
+            dbManager.addNewArea(insertToDb, areaName);
+
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
     }
 
     public void onCancelClicked(View v) {
         areaScanActive = false;
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+        onBackPressed();
     }
 
     /////////////////////

@@ -4,12 +4,16 @@ import android.app.ActivityManager;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.core.content.ContextCompat;
 
+import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.util.Pref;
 import pl.michnam.app.util.Tag;
 
 public class App extends Application {
@@ -22,6 +26,7 @@ public class App extends Application {
         instance = this;
         createNotificationChannel();
         startServiceIfNotRunning();
+        checkPreferences();
     }
 
     private void createNotificationChannel() {
@@ -44,6 +49,20 @@ public class App extends Application {
             if ("pl.michnam.app.core.service.MainService".equals(service.service.getClassName()))
                 return true;
         return false;
+    }
+
+    private void checkPreferences(){
+        SharedPreferences sharedPref = getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor;
+        if (!sharedPref.contains(Pref.initialized)){
+            editor = sharedPref.edit();
+            editor.putBoolean(Pref.initialized, true);
+            editor.putBoolean(Pref.activeMode, false);
+            editor.putInt(Pref.margin, AppConfig.marginSignalStrength);
+            editor.putInt(Pref.scanAge, AppConfig.maxScanAge);
+            editor.apply();
+            Log.i(Tag.CORE, "Set default preferences");
+        }
     }
 
     public static App getInstance() {

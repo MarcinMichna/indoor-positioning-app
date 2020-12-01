@@ -10,7 +10,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-
     <application
         android:name=".App"
         android:allowBackup="true"
@@ -19,7 +18,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
-        <activity android:name=".core.activity.AreaCreationActivity"></activity>
+        <activity android:name=".core.activity.DeleteAreaActivity"></activity>
+        <activity android:name=".core.activity.SettingsActivity" />
+        <activity
+            android:name=".core.activity.AreaCreationActivity"
+            android:windowSoftInputMode="adjustPan" />
         <activity android:name=".core.activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

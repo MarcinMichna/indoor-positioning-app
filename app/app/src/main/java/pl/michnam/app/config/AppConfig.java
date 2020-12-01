@@ -11,4 +11,5 @@ public class AppConfig {
     public static final int mainNotificationId = 364;
     public static final int minNumberOfSignalsToAnalyse = 40;
     public static final int maxScanAge = 1000 * 10; // in ms
+    public static final int marginSignalStrength = 3; //db
 }
