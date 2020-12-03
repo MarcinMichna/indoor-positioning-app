@@ -6,9 +6,10 @@ import copy
 from datetime import datetime
 
 lengthThreshold = 1000
-numberOfHotspotSignals = 50
+numberOfHotspotSignals = 5000
 maxRssiDiff = 7  # in db
 maxDeviceSignalAge = 40  # in sec
+maxHotspotAge = 20  # in sec
 
 app = Flask(__name__)
 log = logging.getLogger('werkzeug')
@@ -62,23 +63,44 @@ referenceSignalsWifi = {}
 referenceSignalsBt = {}
 
 
-@app.route('/updateHotspotName', methods=['POST'])
+@app.route('/hotspotName', methods=['POST'])
 def updateHotspotName():
     with lock:
         global hotspotName
         hotspotName = request.json["name"]
         hotspotData.clear()
         app.logger.info("Updated hotspot name: {}".format(hotspotName))
-        return 'OK'
+        return json.dumps({"status": "OK"}, default=str)
 
 
-@app.route('/getHotspot', methods=['GET'])
+@app.route('/hotspot', methods=['GET'])
 def getHotspot():
+    with lock:
+        timestamp = datetime.now().replace(microsecond=0)
+        recent = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxHotspotAge, hotspotData))
+        return json.dumps({"data": recent}, default=str)
+
+
+@app.route('/hotspotClear', methods=['GET'])
+def clearHotspot():
+    with lock:
+        hotspotData.clear()
+        return json.dumps({"status": "OK"}, default=str)
+
+@app.route('/hotspotArea', methods=['GET'])
+def getHotspotArea():
     with lock:
         return json.dumps({"data": hotspotData}, default=str)
 
+@app.route('/hotspotAge', methods=['POST'])
+def setHotspotMaxAge():
+    with lock:
+        global maxHotspotAge
+        maxHotspotAge = int(request.json["age"])
+    return json.dumps({"status": "OK"}, default=str)
 
-@app.route('/updateWatchedDevices', methods=['POST'])
+
+@app.route('/watchedDevices', methods=['POST'])
 def updateWatchedDevices():
     with lock:
         global referenceSignalsWifi
@@ -96,10 +118,11 @@ def updateWatchedDevices():
         referenceSignalsBt = copy.deepcopy(avgDeviceDataBt)
 
         app.logger.info("Updated list watched devices wifi: {}, bt: {}".format(devicesWifi, devicesBt))
-        return 'OK'
+        return json.dumps({"status": "OK"}, default=str)
 
-@app.route('/getNotMatchingDevices', methods=['GET'])
-def getNotMatchingDevices():
+
+@app.route('/excludedDevices', methods=['GET'])
+def getExcludedDevices():
     with lock:
 
         notMatchingWifiNumber = {}
@@ -127,7 +150,8 @@ def getNotMatchingDevices():
                                 else:
                                     notMatchingBtNumber[name] += 1
 
-        app.logger.info("Number of signals not matching. WIFI: {}, BT: {}".format(notMatchingWifiNumber, notMatchingBtNumber))
+        app.logger.info(
+            "Number of signals not matching. WIFI: {}, BT: {}".format(notMatchingWifiNumber, notMatchingBtNumber))
 
         notMatchingWifi = []
         notMatchingBt = []
@@ -174,6 +198,8 @@ def add():
         global recentDataBt
         recentDataBt = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxDeviceSignalAge, dataBle))
 
+
+
         clearEspData()
 
         global espDataWifi
@@ -214,7 +240,7 @@ def add():
                     avgDeviceDataBt[name] = {}
                 avgDeviceDataBt[name][key] = rssi
 
-        return 'OK'
+        return json.dumps({"status": "OK"}, default=str)
 
 
 def calcAvgEspData():
@@ -294,7 +320,7 @@ def get():
 def hello_world():
     app.logger.info("root path request - OK")
     timestamp = datetime.now().replace(microsecond=0)
-    return str(timestamp)
+    return json.dumps({"timestamp": timestamp}, default=str)
 
 
 @app.route('/checkGet', methods=['GET'])
@@ -307,6 +333,11 @@ def checkGet():
 @app.route('/checkRecentData', methods=['GET'])
 def checkRecentData():
     return json.dumps({"wifi": recentDataWifi, "bt": recentDataBt}, default=str)
+
+
+@app.route('/checkHotspotData', methods=['GET'])
+def checkHotspotData():
+    return json.dumps({"hotspot": hotspotData}, default=str)
 
 
 @app.route('/checkEspData', methods=['GET'])

@@ -33,6 +33,7 @@ import java.util.Arrays;
 
 import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.core.view.ResultListAdapter;
@@ -199,6 +200,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW CONTROLLER //////
     ////////////////////////////
     public void onStartButtonClick(View v) {
+        RequestManager requestManager = new RequestManager(this);
+        requestManager.getHotspotData();
         AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
         updateButtonAndService();
     }
@@ -239,6 +242,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     @Override
     public void setResults(ArrayList<String> res) {
+        Log.v(Tag.UI, "UI - Number of devices matching in areas: " + res.toString());
         if (MainService.isWorking()) {
             results.clear();
             results.addAll(res);

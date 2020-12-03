@@ -168,7 +168,6 @@ public class AreaCreationActivity extends AppCompatActivity {
         addWifiResultsToList(results);
         updateListOfItems();
         areaListAdapter.notifyDataSetChanged();
-
     }
 
     ////////////////////////
