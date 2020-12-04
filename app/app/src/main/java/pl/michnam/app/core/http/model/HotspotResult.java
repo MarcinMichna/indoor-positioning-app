@@ -1,12 +1,12 @@
 package pl.michnam.app.core.http.model;
 
-public class HotspotData {
+public class HotspotResult {
     private String ssid;
     private int rssi;
     private String esp;
     private String timestamp;
 
-    public HotspotData(String ssid, int rssi, String esp) {
+    public HotspotResult(String ssid, int rssi, String esp) {
         this.ssid = ssid;
         this.rssi = rssi;
         this.esp = esp;

@@ -13,6 +13,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import pl.michnam.app.R;
+import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.util.Pref;
 
@@ -80,8 +81,11 @@ public class SettingsActivity extends AppCompatActivity {
             editor.putBoolean(Pref.activeMode, switchCompat.isChecked());
 
         String newHotspotName = hotspotName.getText().toString();
-        if (!newHotspotName.equals("") && !newHotspotName.equals(hotspot))
+        if (!newHotspotName.equals("") && !newHotspotName.equals(hotspot)) {
             editor.putString(Pref.hotspotName, hotspotName.getText().toString());
+            new RequestManager(this).updateHotspotName(newHotspotName);
+        }
+
 
         String newMarginString = signalMargin.getText().toString();
         if (!newMarginString.equals("") && !newMarginString.equals(margin)) {

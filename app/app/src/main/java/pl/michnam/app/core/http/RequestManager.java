@@ -13,7 +13,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-import pl.michnam.app.core.http.model.HotspotData;
+import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.http.model.HotspotResult;
 import pl.michnam.app.util.Tag;
 
 public class RequestManager {
@@ -123,15 +124,15 @@ public class RequestManager {
         queue.addToRequestQueue(request);
     }
 
-    public void getHotspotData() {
+    public void handleHotspotData() {
         Gson gson = new Gson();
-        ArrayList<HotspotData> hotspotData = new ArrayList<>();
+        ArrayList<HotspotResult> hotspotData = new ArrayList<>();
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL_HOTSPOT_GET, null, response -> {
             try {
                 JSONArray jsonArray = response.getJSONArray("data");
                 if (jsonArray != null) {
                     for (int i = 0; i < jsonArray.length(); i++) {
-                        hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotData.class));
+                        hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
                     }
                 }
                 Log.i(Tag.HTTP, hotspotData.toString());
@@ -148,20 +149,18 @@ public class RequestManager {
         queue.addToRequestQueue(request);
     }
 
-    public void getHotspotDataArea() {
+    public void handleHotspotDataArea() {
         Gson gson = new Gson();
-        ArrayList<HotspotData> hotspotData = new ArrayList<>();
+        ArrayList<HotspotResult> hotspotData = new ArrayList<>();
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL_HOTSPOT_AREA_GET, null, response -> {
             try {
                 JSONArray jsonArray = response.getJSONArray("data");
-                if (jsonArray != null) {
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotData.class));
-                    }
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
                 }
                 Log.i(Tag.HTTP, hotspotData.toString());
 
-                // TODO
+                // TODO calculate avg sd and put to db
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -173,7 +172,7 @@ public class RequestManager {
         queue.addToRequestQueue(request);
     }
 
-    public void getExcludedDevices() {
+    public void handleExcludedDevices() {
         ArrayList<String> excludedWifi = new ArrayList<>();
         ArrayList<String> excludedBt = new ArrayList<>();
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL_EXCLUDED_DEVICES_GET, null, response -> {
@@ -194,7 +193,10 @@ public class RequestManager {
                 }
                 Log.i(Tag.HTTP, "Excluded BT: " + excludedBt.toString());
 
-                // TODO
+                AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
+                areaAnalysis.setExcludedWifi(excludedWifi);
+                areaAnalysis.setExcludedBt(excludedBt);
+
 
             } catch (JSONException e) {
                 e.printStackTrace();

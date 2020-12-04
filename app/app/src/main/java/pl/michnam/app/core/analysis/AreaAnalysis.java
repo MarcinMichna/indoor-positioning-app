@@ -35,6 +35,9 @@ public class AreaAnalysis {
     private HashMap<String, ArrayList<AreaData>> areas = new HashMap<>();
     private final ArrayList<ScanResult> currentResWifi = new ArrayList<>();
     private final ArrayList<android.bluetooth.le.ScanResult> currentResBle = new ArrayList<>();
+
+    private ArrayList<String> excludedWifi = new ArrayList<>();
+    private ArrayList<String> excludedBt = new ArrayList<>();
     private String currentArea = "";
 
 
@@ -203,4 +206,20 @@ public class AreaAnalysis {
         return Holder.instance;
     }
 
+
+    public ArrayList<String> getExcludedWifi() {
+        return excludedWifi;
+    }
+
+    public synchronized void setExcludedWifi(ArrayList<String> excludedWifi) {
+        this.excludedWifi = excludedWifi;
+    }
+
+    public ArrayList<String> getExcludedBt() {
+        return excludedBt;
+    }
+
+    public synchronized void setExcludedBt(ArrayList<String> excludedBt) {
+        this.excludedBt = excludedBt;
+    }
 }

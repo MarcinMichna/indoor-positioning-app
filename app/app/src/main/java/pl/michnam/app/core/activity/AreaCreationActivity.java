@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -28,7 +27,7 @@ import java.util.List;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.view.AreaItem;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.core.view.AreaListItemAdapter;
@@ -43,13 +42,22 @@ public class AreaCreationActivity extends AppCompatActivity {
 
     private AreaListItemAdapter areaListAdapter;
     private ArrayList<AreaItem> itemsToShow = new ArrayList<>();
+
     private HashMap<String, ArrayList<ScanResult>> allWifi = new HashMap<>();
     private HashMap<String, ArrayList<android.bluetooth.le.ScanResult>> allBle = new HashMap<>();
+
+    private ArrayList<AreaItem> dbItems = new ArrayList<>();
+    private HashMap<String, ArrayList<Integer>> wifiRssiPerDevice = new HashMap<>();
+    private HashMap<String, ArrayList<Integer>> btRssiPerDevice = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_area_creation);
+
+        RequestManager requestManager = new RequestManager(this);
+        requestManager.clearHotspotData();
+
         initView();
         initList();
     }
@@ -69,7 +77,6 @@ public class AreaCreationActivity extends AppCompatActivity {
     }
 
 
-
     ///////////////////////////
     ///// VIEW CONTROLLER /////
     ///////////////////////////
@@ -84,18 +91,16 @@ public class AreaCreationActivity extends AppCompatActivity {
         listView.setAdapter(areaListAdapter);
     }
 
-    public void onFinishClicked(View v) {
+    public synchronized void onFinishClicked(View v) {
         String areaName = areaNameView.getText().toString().trim();
         ArrayList<String> areasList = new DbManager(this).getAreasList();
-        if (areaName.equals("")){
+        if (areaName.equals("")) {
             Toast.makeText(this, getString(R.string.set_area_name),
                     Toast.LENGTH_LONG).show();
-        }
-        else if (areasList.contains(areaName)) {
+        } else if (areasList.contains(areaName)) {
             Toast.makeText(this, getString(R.string.area_exists),
                     Toast.LENGTH_LONG).show();
-        }
-        else {
+        } else {
             areaScanActive = false;
             ArrayList<AreaItem> insertToDb = new ArrayList<>();
 
@@ -197,8 +202,6 @@ public class AreaCreationActivity extends AppCompatActivity {
         }
 
 
-
-
         // update listview ranges wifi
         for (AreaItem item : itemsToShow) {
             if (!item.isBt()) {
@@ -208,6 +211,11 @@ public class AreaCreationActivity extends AppCompatActivity {
                 for (ScanResult result : results) {
                     if (result.level > max) max = result.level;
                     else if (result.level < min) min = result.level;
+
+                    if (wifiRssiPerDevice.containsKey(item.getName()))
+                        wifiRssiPerDevice.get(item.getName()).add(result.level);
+                    else
+                        wifiRssiPerDevice.put(item.getName(), new ArrayList<>(Collections.singletonList(result.level)));
                 }
                 item.setMinRssi(min);
                 item.setMaxRssi(max);
@@ -223,14 +231,60 @@ public class AreaCreationActivity extends AppCompatActivity {
                 for (android.bluetooth.le.ScanResult result : results) {
                     if (result.getRssi() > max) max = result.getRssi();
                     else if (result.getRssi() < min) min = result.getRssi();
+
+                    if (btRssiPerDevice.containsKey(item.getName()))
+                        btRssiPerDevice.get(item.getName()).add(result.getRssi());
+                    else
+                        btRssiPerDevice.put(item.getName(), new ArrayList<>(Collections.singletonList(result.getRssi())));
                 }
                 item.setMinRssi(min);
                 item.setMaxRssi(max);
             }
         }
 
-        //Log.d(Tag.UI, "Items to show: " + itemsToShow.toString());
+        for (AreaItem item : itemsToShow) {
+            if (!item.isBt()) {
+                Log.i(Tag.AREA, item.getName());
+                ArrayList<Integer> deviceData = wifiRssiPerDevice.get(item.getName());
+                double avg = averageList(deviceData);
+                double sd = sdFromList(deviceData, avg);
+                item.setAvg(avg);
+                item.setSd(sd);
+            }
+        }
+
+        for (AreaItem item : itemsToShow) {
+            if (item.isBt()) {
+                Log.i(Tag.AREA, item.getName());
+                ArrayList<Integer> deviceData = btRssiPerDevice.get(item.getName());
+                double avg = averageList(deviceData);
+                double sd = sdFromList(deviceData, avg);
+                item.setAvg(avg);
+                item.setSd(sd);
+            }
+        }
+
     }
+
+    public static double sdFromList(ArrayList<Integer> data, double avg) {
+        double tmp = 0;
+        for (int i = 0; i < data.size(); i++) {
+            int val = data.get(i);
+            double sqrtDiff = Math.pow(val - avg, 2);
+            tmp += sqrtDiff;
+        }
+        double avgOfDiffs = tmp / (double) (data.size());
+
+        return Math.sqrt(avgOfDiffs);
+    }
+
+    public static double averageList(List<Integer> data) {
+        return data.stream()
+                .mapToInt(Integer::intValue)
+                .average()
+                .orElse(0.0);
+    }
+
 
     private synchronized void addWifiResultsToList(List<ScanResult> results) {
         for (ScanResult i : results) {
@@ -244,9 +298,9 @@ public class AreaCreationActivity extends AppCompatActivity {
     ///////////////
     ///// BLE /////
     ///////////////
-    private  BluetoothLeScanner bleScanner;
+    private BluetoothLeScanner bleScanner;
 
-    private  final ScanCallback bleCallback = new ScanCallback() {
+    private final ScanCallback bleCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
             super.onScanResult(callbackType, result);

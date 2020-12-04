@@ -7,6 +7,8 @@ public class AreaItem {
     private int maxRssi;
     private boolean isChecked;
     private boolean bt;
+    private double avg;
+    private double sd;
 
     public AreaItem(String name, boolean bt) {
         this.name = name;
@@ -76,5 +78,21 @@ public class AreaItem {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public double getAvg() {
+        return avg;
+    }
+
+    public void setAvg(double avg) {
+        this.avg = avg;
+    }
+
+    public double getSd() {
+        return sd;
+    }
+
+    public void setSd(double sd) {
+        this.sd = sd;
     }
 }

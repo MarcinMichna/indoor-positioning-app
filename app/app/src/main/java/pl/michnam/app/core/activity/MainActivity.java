@@ -14,20 +14,14 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -65,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     private void onReady() {
         Log.i(Tag.DB, "Updating areas list");
+        //new DbManager(this).resetTables();
         AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
     }
 
@@ -201,7 +196,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ////////////////////////////
     public void onStartButtonClick(View v) {
         RequestManager requestManager = new RequestManager(this);
-        requestManager.getHotspotData();
+        requestManager.handleHotspotData();
         AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
         updateButtonAndService();
     }
