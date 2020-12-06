@@ -46,7 +46,6 @@ public class AreaCreationActivity extends AppCompatActivity {
     private HashMap<String, ArrayList<ScanResult>> allWifi = new HashMap<>();
     private HashMap<String, ArrayList<android.bluetooth.le.ScanResult>> allBle = new HashMap<>();
 
-    private ArrayList<AreaItem> dbItems = new ArrayList<>();
     private HashMap<String, ArrayList<Integer>> wifiRssiPerDevice = new HashMap<>();
     private HashMap<String, ArrayList<Integer>> btRssiPerDevice = new HashMap<>();
 
@@ -112,6 +111,9 @@ public class AreaCreationActivity extends AppCompatActivity {
 
             DbManager dbManager = new DbManager(this);
             dbManager.addNewArea(insertToDb, areaName);
+
+            RequestManager requestManager = new RequestManager(this);
+            requestManager.handleHotspotDataArea(this, areaName);
 
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
@@ -244,10 +246,10 @@ public class AreaCreationActivity extends AppCompatActivity {
 
         for (AreaItem item : itemsToShow) {
             if (!item.isBt()) {
-                Log.i(Tag.AREA, item.getName());
                 ArrayList<Integer> deviceData = wifiRssiPerDevice.get(item.getName());
                 double avg = averageList(deviceData);
                 double sd = sdFromList(deviceData, avg);
+                if (sd < 1) sd = 1;
                 item.setAvg(avg);
                 item.setSd(sd);
             }
@@ -255,10 +257,10 @@ public class AreaCreationActivity extends AppCompatActivity {
 
         for (AreaItem item : itemsToShow) {
             if (item.isBt()) {
-                Log.i(Tag.AREA, item.getName());
                 ArrayList<Integer> deviceData = btRssiPerDevice.get(item.getName());
                 double avg = averageList(deviceData);
                 double sd = sdFromList(deviceData, avg);
+                if (sd < 1) sd = 1;
                 item.setAvg(avg);
                 item.setSd(sd);
             }

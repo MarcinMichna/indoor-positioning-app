@@ -14,18 +14,22 @@ import android.util.Pair;
 
 import androidx.core.app.NotificationCompat;
 
+import org.apache.commons.math3.distribution.NormalDistribution;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.sql.entity.AreaData;
+import pl.michnam.app.util.MathCalc;
 import pl.michnam.app.util.Pref;
 import pl.michnam.app.util.Tag;
 
@@ -114,37 +118,48 @@ public class AreaAnalysis {
                 avgStrength.put(key, calculateAverage(strengthList.get(key)));
             }
 
+            // TODO new area choosing algorithm
+            //Log.i(Tag.ANALYZE, avgStrength.toString());
 
+            HashMap<String, Double> probabilityPerArea = new HashMap<>();
 
+            for (Map.Entry<String, ArrayList<AreaData>> area : areas.entrySet()) {
+                //Log.i(Tag.ANALYZE, "Area " + area.getKey());
+                ArrayList<Double> distributions = new ArrayList<>();
+                NormalDistribution dist;
+                for (AreaData device : area.getValue()) {
+                    if (avgStrength.containsKey(device.getName())) {
 
-            // set number of matching ranges
-            for (String area : areas.keySet()) {
-                ArrayList<AreaData> areaInfo = areas.get(area);
-                for (int i = 0; i < areaInfo.size(); i++) {
-                    AreaData singleInfo = areaInfo.get(i);
-                    if (avgStrength.containsKey(singleInfo.getName())) {
-                        double avgStr = avgStrength.get(singleInfo.getName());
-                        if (avgStr > singleInfo.getMinRssi() && avgStr < singleInfo.getMaxRssi()) {
-                            matchesInAreas.put(area, matchesInAreas.get(area) + 1);
-                        }
+                        dist = new NormalDistribution(device.getAvg(), device.getSd());
+                        double currentSignal = avgStrength.get(device.getName());
+                        distributions.add(dist.cumulativeProbability(currentSignal));
+                        //Log.i(Tag.ANALYZE, "Device " + device.getName() + ": " + dist.cumulativeProbability(currentSignal));
                     }
                 }
+
+                ArrayList<Double> diffToCenter = new ArrayList<>();
+                for (double distribution : distributions)
+                    diffToCenter.add(Math.abs(distribution - 0.5));
+
+                double avgDiffToCenter = MathCalc.averageListDouble(diffToCenter);
+
+                double avgDistribution = MathCalc.averageListDouble(distributions);
+                probabilityPerArea.put(area.getKey(), avgDiffToCenter);
+
+                //Log.i(Tag.ANALYZE, "Distributions in " + area.getKey() + ": " + distributions.toString());
             }
+            //Log.i(Tag.ANALYZE, "Avg probability: " + probabilityPerArea.toString());
 
 
-
-            // find best matching area
-            int max = 0;
+            double min = 1;
             String bestAreaMatch = "";
-            for (String key : matchesInAreas.keySet()) {
-                if (matchesInAreas.get(key) > max) {
-                    max = matchesInAreas.get(key);
-                    bestAreaMatch = key;
+            for (Map.Entry<String, Double> area : probabilityPerArea.entrySet()) {
+                if (area.getValue() < min) {
+                    min = area.getValue();
+                    bestAreaMatch = area.getKey();
                 }
             }
 
-
-            // if area changed, update notification
             if (!currentArea.equals(bestAreaMatch)) {
                 currentArea = bestAreaMatch;
                 Log.i(Tag.ANALYZE, "Entered new area: " + bestAreaMatch);
@@ -152,21 +167,77 @@ public class AreaAnalysis {
             }
 
             if (callbacks != null) {
+                ArrayList<Pair<String, Double>> resUnordered = new ArrayList<>();
 
-                ArrayList<Pair<String, Integer>> resUnordered = new ArrayList<>();
-                for(String area: matchesInAreas.keySet())
-                    resUnordered.add(new Pair<>(area, matchesInAreas.get(area)));
+                for (Map.Entry<String, Double> area : probabilityPerArea.entrySet()) {
+                    resUnordered.add(new Pair<>(area.getKey(), area.getValue()));
+                }
 
-                resUnordered.sort(Comparator.comparing(p -> -p.second));
+                resUnordered.sort(Comparator.comparing(p -> p.second));
 
                 ArrayList<String> res = new ArrayList<>();
-                for (Pair<String, Integer> item : resUnordered)
-                    res.add(item.first + ": " + item.second);
+                for (Pair<String, Double> item : resUnordered)
+                    res.add(item.first + ": " + Math.round(100 - (item.second * 100) * 2)  + "%");
 
                 callbacks.setResults(res);
                 callbacks.setCurrentArea(bestAreaMatch);
                 callbacks.setExcludedDevices(new ArrayList<>());
             }
+
+
+
+            // OLD
+
+
+//            // set number of matching ranges
+//            for (String area : areas.keySet()) {
+//                ArrayList<AreaData> areaInfo = areas.get(area);
+//                for (int i = 0; i < areaInfo.size(); i++) {
+//                    AreaData singleInfo = areaInfo.get(i);
+//                    if (avgStrength.containsKey(singleInfo.getName())) {
+//                        double avgStr = avgStrength.get(singleInfo.getName());
+//                        if (avgStr > singleInfo.getMinRssi() && avgStr < singleInfo.getMaxRssi()) {
+//                            matchesInAreas.put(area, matchesInAreas.get(area) + 1);
+//                        }
+//                    }
+//                }
+//            }
+//
+//
+//            // find best matching area
+//            int max = 0;
+//            String bestAreaMatch = "";
+//            for (String key : matchesInAreas.keySet()) {
+//                if (matchesInAreas.get(key) > max) {
+//                    max = matchesInAreas.get(key);
+//                    bestAreaMatch = key;
+//                }
+//            }
+//
+//
+//            // if area changed, update notification
+//            if (!currentArea.equals(bestAreaMatch)) {
+//                currentArea = bestAreaMatch;
+//                Log.i(Tag.ANALYZE, "Entered new area: " + bestAreaMatch);
+//                updateNotificationArea(context.getString(R.string.notif_in_area) + bestAreaMatch, context);
+//            }
+//
+//            if (callbacks != null) {
+//
+//                ArrayList<Pair<String, Integer>> resUnordered = new ArrayList<>();
+//                for (String area : matchesInAreas.keySet())
+//                    resUnordered.add(new Pair<>(area, matchesInAreas.get(area)));
+//
+//                resUnordered.sort(Comparator.comparing(p -> -p.second));
+//
+//                ArrayList<String> res = new ArrayList<>();
+//                for (Pair<String, Integer> item : resUnordered)
+//                    res.add(item.first + ": " + item.second);
+//
+//                callbacks.setResults(res);
+//                callbacks.setCurrentArea(bestAreaMatch);
+//                callbacks.setExcludedDevices(new ArrayList<>());
+//            }
         }
     }
 
@@ -196,7 +267,8 @@ public class AreaAnalysis {
     /////////////////////
     ///// SINGLETON /////
     /////////////////////
-    private AreaAnalysis() { }
+    private AreaAnalysis() {
+    }
 
     private static class Holder {
         private static final AreaAnalysis instance = new AreaAnalysis();

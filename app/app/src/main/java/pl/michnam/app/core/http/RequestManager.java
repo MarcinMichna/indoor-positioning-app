@@ -12,9 +12,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.http.model.HotspotResult;
+import pl.michnam.app.sql.DbManager;
+import pl.michnam.app.sql.entity.HotspotData;
+import pl.michnam.app.util.MathCalc;
 import pl.michnam.app.util.Tag;
 
 public class RequestManager {
@@ -149,18 +155,36 @@ public class RequestManager {
         queue.addToRequestQueue(request);
     }
 
-    public void handleHotspotDataArea() {
+    public void handleHotspotDataArea(Context context, String areaName) {
         Gson gson = new Gson();
-        ArrayList<HotspotResult> hotspotData = new ArrayList<>();
+        ArrayList<HotspotResult> hotspotResult = new ArrayList<>();
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL_HOTSPOT_AREA_GET, null, response -> {
             try {
                 JSONArray jsonArray = response.getJSONArray("data");
                 for (int i = 0; i < jsonArray.length(); i++) {
-                    hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
+                    hotspotResult.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
                 }
-                Log.i(Tag.HTTP, hotspotData.toString());
+                Log.i(Tag.HTTP, hotspotResult.toString());
 
                 // TODO calculate avg sd and put to db
+
+                // calculate list of singnals per esp device
+                HashMap<String, ArrayList<Integer>> deviceSignalList = new HashMap<>();
+                for (HotspotResult res : hotspotResult) {
+                    if (deviceSignalList.containsKey(res.getEsp()))
+                        deviceSignalList.get(res.getEsp()).add(res.getRssi());
+                    else
+                        deviceSignalList.put(res.getEsp(), new ArrayList<>(Collections.singletonList(res.getRssi())));
+                }
+
+                ArrayList<HotspotData> dbData = new ArrayList<>();
+                for (Map.Entry<String, ArrayList<Integer>> device : deviceSignalList.entrySet()) {
+                    double avg = MathCalc.averageList(device.getValue());
+                    double sd = MathCalc.sdFromList(device.getValue(), avg);
+                    dbData.add(new HotspotData(null, device.getKey(), 0, 0, avg, sd));
+                }
+                DbManager dbManager = new DbManager(context);
+                dbManager.addNewAreaHotspot(dbData, areaName);
 
             } catch (JSONException e) {
                 e.printStackTrace();

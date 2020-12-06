@@ -64,6 +64,7 @@ public class DbManager extends SQLiteOpenHelper {
         db.execSQL(
                 "CREATE TABLE IF NOT EXISTS "+ HOTSPOT +" (" +
                         "id INTEGER primary key autoincrement, " +
+                        "area_name TEXT," +
                         "esp TEXT," +
                         "type TEXT," +
                         "min_rssi INTEGER, " +
