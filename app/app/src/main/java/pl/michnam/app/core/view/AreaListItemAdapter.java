@@ -32,17 +32,16 @@ public class AreaListItemAdapter extends ArrayAdapter<AreaItem> {
 
         AreaItem areaListItem = getItem(position);
 
-        if (areaListItem.isChecked()) checkBox.setChecked(true);
-        else checkBox.setChecked(false);
-        if (areaListItem.isBt()) imageView.setImageResource(R.drawable.ic_bluetooth);
+        checkBox.setChecked(areaListItem.isChecked());
+
+        if (areaListItem.isBt())
+            imageView.setImageResource(R.drawable.ic_bluetooth);
 
         txt.setText(areaListItem.toString());
 
-        checkBox.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                areaListItem.setChecked(!areaListItem.isChecked());
-            }
+        checkBox.setOnClickListener(v -> {
+            areaListItem.setChecked(!areaListItem.isChecked());
+            checkBox.setChecked(areaListItem.isChecked());
         });
         return convertView;
     }
