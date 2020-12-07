@@ -114,6 +114,7 @@ public class AreaCreationActivity extends AppCompatActivity {
 
             RequestManager requestManager = new RequestManager(this);
             requestManager.handleHotspotDataArea(this, areaName);
+            requestManager.updateWatchedDevices(dbManager.watchedDevicesWifi(), dbManager.watchedDevicesBt());
 
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);

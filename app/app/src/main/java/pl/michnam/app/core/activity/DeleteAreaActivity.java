@@ -11,6 +11,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import pl.michnam.app.R;
+import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.view.DeleteAreaAdapter;
 import pl.michnam.app.core.view.DeleteAreaItem;
 import pl.michnam.app.sql.DbManager;
@@ -60,7 +61,8 @@ public class DeleteAreaActivity extends AppCompatActivity {
         else
             Toast.makeText(this, getString(R.string.none_areas_selected), Toast.LENGTH_SHORT).show();
 
-
+        RequestManager requestManager = new RequestManager(this);
+        requestManager.updateWatchedDevices(dbManager.watchedDevicesWifi(), dbManager.watchedDevicesBt());
 
     }
 

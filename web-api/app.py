@@ -7,7 +7,7 @@ from datetime import datetime
 
 lengthThreshold = 1000
 numberOfHotspotSignals = 5000
-maxRssiDiff = 7  # in db
+maxRssiDiff = 5  # in db
 maxDeviceSignalAge = 40  # in sec
 maxHotspotAge = 20  # in sec
 
@@ -157,11 +157,11 @@ def getExcludedDevices():
         notMatchingBt = []
 
         for device, value in notMatchingWifiNumber.items():
-            if value >= len(referenceSignalsWifi[device]) / 2:
+            if value >= 2:
                 notMatchingWifi.append(device)
 
         for device, value in notMatchingBtNumber.items():
-            if value >= len(referenceSignalsBt[device]) / 2:
+            if value >= 2:
                 notMatchingBt.append(device)
 
         return json.dumps({"wifi": notMatchingWifi, "bt": notMatchingBt}, default=str)

@@ -10,5 +10,5 @@ public class Tag {
     public static String ANALYZE = "inpoANALYZE";
     public static String BLE = "inpoBLE";
     public static String BT = "inpoBT";
-    public static String HTTP = "inpoBT";
+    public static String HTTP = "inpoHTTP";
 }

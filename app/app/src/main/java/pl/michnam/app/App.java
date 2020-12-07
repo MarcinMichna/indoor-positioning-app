@@ -58,7 +58,7 @@ public class App extends Application {
             editor = sharedPref.edit();
             editor.putBoolean(Pref.initialized, true);
             editor.putBoolean(Pref.activeMode, false);
-            editor.putInt(Pref.margin, AppConfig.marginSignalStrength);
+            editor.putInt(Pref.fittingThreshold, AppConfig.fittingThreshold);
             editor.putInt(Pref.scanAge, AppConfig.maxScanAge);
             editor.apply();
             Log.i(Tag.CORE, "Set default preferences");

@@ -52,15 +52,28 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (mainService != null) {
+            mainService.setServiceCallbacks(this);
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         unbindServiceConnection();
     }
 
+
+
     private void onReady() {
         Log.i(Tag.DB, "Updating areas list");
         //new DbManager(this).resetTables();
-        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
+        DbManager dbManager = new DbManager(this);
+        AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
+        areaAnalysis.updateAreas(dbManager.getAllAreasInfo());
+        areaAnalysis.setAreasHotspot(dbManager.getAllAreasInfoHotspot());
     }
 
     ////////////////////////////
@@ -181,6 +194,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         excludedDevices = findViewById(R.id.excluded_devices);
 
         startButton.setActivated(false);
+        bestMatch.setText(R.string.none);
+        excludedDevices.setText(R.string.none);
 
         if (MainService.isWorking()) startButton.setText(R.string.stop);
         else startButton.setText(R.string.start);
@@ -197,7 +212,12 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     public void onStartButtonClick(View v) {
         RequestManager requestManager = new RequestManager(this);
         requestManager.handleHotspotData();
-        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
+
+        DbManager dbManager = new DbManager(this);
+        AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
+        areaAnalysis.updateAreas(dbManager.getAllAreasInfo());
+        areaAnalysis.setAreasHotspot(dbManager.getAllAreasInfoHotspot());
+
         updateButtonAndService();
     }
 
@@ -219,9 +239,12 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
             setResults(new ArrayList<>());
             startButton.setText(R.string.start);
             mainService.stopScan();
+            excludedDevices.setText(R.string.none);
+            bestMatch.setText(R.string.none);
         } else {
             startButton.setText(R.string.stop);
             mainService.startScan();
+            bestMatch.setText(R.string.wait_analyze);
         }
     }
 
@@ -247,13 +270,17 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     @Override
     public void setCurrentArea(String currentArea) {
-        if (currentArea.equals("")) bestMatch.setText(R.string.none);
-        else bestMatch.setText(currentArea);
+        if (MainService.isWorking()) {
+            if (currentArea.equals("")) bestMatch.setText(R.string.none);
+            else bestMatch.setText(currentArea);
+        }
     }
 
     @Override
     public void setExcludedDevices(ArrayList<String> excluded) {
-        if (excluded.size() == 0) excludedDevices.setText(R.string.none);
-        else excludedDevices.setText(excluded.toString());
+        if (MainService.isWorking()) {
+            if (excluded.size() == 0) excludedDevices.setText(R.string.none);
+            else excludedDevices.setText(excluded.toString());
+        }
     }
 }

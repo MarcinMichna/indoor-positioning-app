@@ -5,15 +5,19 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
+import android.hardware.Camera;
 import android.os.Binder;
 import android.os.IBinder;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import java.util.ArrayList;
+
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.R;
+import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.scan.BleScan;
 import pl.michnam.app.core.scan.BtScan;
 import pl.michnam.app.core.scan.WifiScan;
@@ -22,7 +26,6 @@ import static pl.michnam.app.App.CHANNEL_ID;
 
 public class MainService extends Service {
     private static boolean working;
-    private static boolean activeMode;
 
     private ServiceCallbacks serviceCallbacks;
     private final IBinder binder = new LocalBinder();
@@ -42,6 +45,18 @@ public class MainService extends Service {
 
     public void stopScan() {
         working = false;
+    }
+
+    public void setView() {
+        if (serviceCallbacks != null){
+            AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
+            ArrayList<String> excludedAll = new ArrayList<>();
+            excludedAll.addAll(areaAnalysis.getExcludedWifi());
+            excludedAll.addAll(areaAnalysis.getExcludedBt());
+            serviceCallbacks.setResults(areaAnalysis.getResultProbabilities());
+            serviceCallbacks.setCurrentArea(areaAnalysis.getCurrentArea());
+            serviceCallbacks.setExcludedDevices(excludedAll);
+        }
     }
 
     /////////////////////////////////

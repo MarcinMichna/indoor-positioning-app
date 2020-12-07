@@ -2,6 +2,7 @@ package pl.michnam.app.core.http;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.http.model.HotspotResult;
 import pl.michnam.app.sql.DbManager;
@@ -116,7 +118,7 @@ public class RequestManager {
     }
 
     public void clearHotspotData() {
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, URL_CLEAR_HOTSPOT, null, response -> {
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL_CLEAR_HOTSPOT, null, response -> {
             try {
                 if (response.get("status").equals("OK"))
                     Log.d(Tag.HTTP, "Successful request , url: " + URL_CLEAR_HOTSPOT);
@@ -141,9 +143,10 @@ public class RequestManager {
                         hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
                     }
                 }
-                Log.i(Tag.HTTP, hotspotData.toString());
+                //Log.i(Tag.HTTP, hotspotData.toString());
 
-                // TODO
+
+                AreaAnalysis.getInstance().setHotspotData(hotspotData);
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -164,9 +167,7 @@ public class RequestManager {
                 for (int i = 0; i < jsonArray.length(); i++) {
                     hotspotResult.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
                 }
-                Log.i(Tag.HTTP, hotspotResult.toString());
-
-                // TODO calculate avg sd and put to db
+                //Log.i(Tag.HTTP, hotspotResult.toString());
 
                 // calculate list of singnals per esp device
                 HashMap<String, ArrayList<Integer>> deviceSignalList = new HashMap<>();

@@ -7,25 +7,28 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import pl.michnam.app.R;
+import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.http.RequestManager;
-import pl.michnam.app.core.service.MainService;
+import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.util.Pref;
+import pl.michnam.app.util.Tag;
 
 public class SettingsActivity extends AppCompatActivity {
     private SwitchCompat switchCompat;
     private EditText hotspotName;
-    private EditText signalMargin;
+    private EditText fittingThreshold;
     private EditText scanAge;
 
     private Boolean mode;
     private String hotspot;
-    private String margin;
+    private String thresholdFitting;
     private String age;
 
 
@@ -40,19 +43,19 @@ public class SettingsActivity extends AppCompatActivity {
     private void initView() {
         switchCompat = findViewById(R.id.activeModeSwitch);
         hotspotName = findViewById(R.id.hotspotName);
-        signalMargin = findViewById(R.id.signalMargin);
+        fittingThreshold = findViewById(R.id.fittingThreshold);
         scanAge = findViewById(R.id.signalTime);
 
         SharedPreferences sharedPref = getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
 
         mode = sharedPref.getBoolean(Pref.activeMode, false);
         hotspot = sharedPref.getString(Pref.hotspotName, "");
-        margin  = Integer.toString(sharedPref.getInt(Pref.margin, -1));
+        thresholdFitting = Integer.toString(sharedPref.getInt(Pref.fittingThreshold, -1));
         age = Integer.toString(sharedPref.getInt(Pref.scanAge,-1 ));
 
         switchCompat.setChecked(mode);
         hotspotName.setHint(hotspot);
-        signalMargin.setHint(margin);
+        fittingThreshold.setHint(thresholdFitting);
         scanAge.setHint(age);
 
         switchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -87,11 +90,11 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
 
-        String newMarginString = signalMargin.getText().toString();
-        if (!newMarginString.equals("") && !newMarginString.equals(margin)) {
+        String newMarginString = fittingThreshold.getText().toString();
+        if (!newMarginString.equals("") && !newMarginString.equals(thresholdFitting)) {
             try {
                 int number = Integer.parseInt(newMarginString);
-                editor.putInt(Pref.margin, number);
+                editor.putInt(Pref.fittingThreshold, number);
             }
             catch (Exception e) {
                 Toast.makeText(getApplicationContext(),getString(R.string.settings_error), Toast.LENGTH_LONG).show();
@@ -99,11 +102,14 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
-        String newAge = signalMargin.getText().toString();
+        boolean changedAge = false;
+        String newAge = scanAge.getText().toString();
+        int number = AppConfig.maxScanAge;
         if (!newAge.equals("") && !newAge.equals(age)) {
             try {
-                int number = Integer.parseInt(newAge);
+                number = Integer.parseInt(newAge);
                 editor.putInt(Pref.scanAge, number);
+                changedAge = true;
             }
             catch (Exception e) {
                 Toast.makeText(getApplicationContext(), getString(R.string.settings_error), Toast.LENGTH_LONG).show();
@@ -113,9 +119,10 @@ public class SettingsActivity extends AppCompatActivity {
 
         if (validPrefs) {
             editor.apply();
+            RequestManager requestManager = new RequestManager(this);
+            if (changedAge) requestManager.updateHotspotAge(number);
             onBackPressed();
         }
-
         else
             editor.clear();
     }

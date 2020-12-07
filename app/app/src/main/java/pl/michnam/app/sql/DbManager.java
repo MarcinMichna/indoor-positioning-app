@@ -62,7 +62,7 @@ public class DbManager extends SQLiteOpenHelper {
                         "sd REAL);"
         );
         db.execSQL(
-                "CREATE TABLE IF NOT EXISTS "+ HOTSPOT +" (" +
+                "CREATE TABLE IF NOT EXISTS " + HOTSPOT + " (" +
                         "id INTEGER primary key autoincrement, " +
                         "area_name TEXT," +
                         "esp TEXT," +
@@ -150,6 +150,33 @@ public class DbManager extends SQLiteOpenHelper {
         return results;
     }
 
+    public ArrayList<HotspotData> getAreaDataHotspot(String areaName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<HotspotData> results = new ArrayList<>();
+
+        String query = "select * from " + HOTSPOT + " where " + HOTSPOT_AREA_NAME + " = '" + areaName + "'";
+        @SuppressLint("Recycle") Cursor res = db.rawQuery(query, null);
+        res.moveToFirst();
+
+        String esp;
+        int minRssi = 0;
+        int maxRssi = 0;
+        double avg;
+        double sd;
+
+        while (!res.isAfterLast()) {
+            esp = res.getString(res.getColumnIndex(HOTSPOT_ESP));
+            avg = res.getInt(res.getColumnIndex(HOTSPOT_AVG));
+            sd = res.getInt(res.getColumnIndex(HOTSPOT_SD));
+            if (sd < 1) sd = 1;
+
+            results.add(new HotspotData(esp, minRssi, maxRssi, avg, sd));
+            res.moveToNext();
+        }
+
+        return results;
+    }
+
     public ArrayList<String> getAreasList() {
         SQLiteDatabase db = this.getReadableDatabase();
         ArrayList<String> results = new ArrayList<>();
@@ -167,6 +194,20 @@ public class DbManager extends SQLiteOpenHelper {
         return results;
     }
 
+    public ArrayList<String> getAreasListHotspot() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<String> results = new ArrayList<>();
+
+        String query = "SELECT DISTINCT " + HOTSPOT_AREA_NAME + " FROM " + HOTSPOT;
+        @SuppressLint("Recycle") Cursor res = db.rawQuery(query, null);
+        res.moveToFirst();
+        while (!res.isAfterLast()) {
+            results.add(res.getString(res.getColumnIndex(HOTSPOT_AREA_NAME)));
+            res.moveToNext();
+        }
+        return results;
+    }
+
     public HashMap<String, ArrayList<AreaData>> getAllAreasInfo() {
         HashMap<String, ArrayList<AreaData>> res = new HashMap<>();
 
@@ -176,12 +217,13 @@ public class DbManager extends SQLiteOpenHelper {
         return res;
     }
 
-    public void resetAreas(Context context) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        String query = "DELETE FROM " + AREA;
-        db.execSQL(query);
+    public HashMap<String, ArrayList<HotspotData>> getAllAreasInfoHotspot() {
+        HashMap<String, ArrayList<HotspotData>> res = new HashMap<>();
+        for (String area : getAreasListHotspot()) {
+            res.put(area, getAreaDataHotspot(area));
+        }
 
-        Toast.makeText(context, context.getString(R.string.cleared_areas), Toast.LENGTH_LONG).show();
+        return res;
     }
 
     public void deleteAreas(Context context, ArrayList<String> areas) {
@@ -190,6 +232,8 @@ public class DbManager extends SQLiteOpenHelper {
             for (String area : areas) {
                 String query = "DELETE FROM " + AREA + " WHERE " + AREA_NAME + " = '" + area + "'";
                 db.execSQL(query);
+                String queryHotspot = "DELETE FROM " + HOTSPOT + " WHERE " + HOTSPOT_AREA_NAME + " = '" + area + "'";
+                db.execSQL(queryHotspot);
             }
             Log.i(Tag.DB, "Deleted areas: " + areas);
         }
@@ -197,7 +241,41 @@ public class DbManager extends SQLiteOpenHelper {
 
     }
 
-    public void resetTables(){
+    public ArrayList<String> watchedDevicesWifi() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<String> results = new ArrayList<>();
+
+        String query = "SELECT DISTINCT " + AREA_DEVICE_NAME + " FROM " + AREA + " WHERE " + AREA_TYPE + " = '" + "wifi" + "'";;
+        @SuppressLint("Recycle") Cursor res = db.rawQuery(query, null);
+        res.moveToFirst();
+        while (!res.isAfterLast()) {
+            String device = res.getString(res.getColumnIndex(AREA_DEVICE_NAME));
+            if (!device.equals("ESP_1_WIFI") && !device.equals("ESP_2_WIFI") && !device.equals("ESP_3_WIFI") && !device.equals("ESP_4_WIFI"))
+                results.add(device);
+            res.moveToNext();
+        }
+        return results;
+    }
+
+    public ArrayList<String> watchedDevicesBt() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<String> results = new ArrayList<>();
+
+        String query = "SELECT DISTINCT " + AREA_DEVICE_NAME + " FROM " + AREA + " WHERE " + AREA_TYPE + " = '" + "bt" + "'";;
+        @SuppressLint("Recycle") Cursor res = db.rawQuery(query, null);
+        res.moveToFirst();
+        while (!res.isAfterLast()) {
+            String device = res.getString(res.getColumnIndex(AREA_DEVICE_NAME));
+            if (!device.equals("ESP_1_BT") && !device.equals("ESP_2_BT") && !device.equals("ESP_3_BT") && !device.equals("ESP_4_BT")){
+                results.add(device);
+            }
+
+            res.moveToNext();
+        }
+        return results;
+    }
+
+    public void resetTables() {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DROP TABLE IF EXISTS area");
         db.execSQL("DROP TABLE IF EXISTS hotspot");
@@ -214,7 +292,7 @@ public class DbManager extends SQLiteOpenHelper {
                         "sd REAL);"
         );
         db.execSQL(
-                "CREATE TABLE IF NOT EXISTS "+ HOTSPOT +" (" +
+                "CREATE TABLE IF NOT EXISTS " + HOTSPOT + " (" +
                         "id INTEGER primary key autoincrement, " +
                         "esp TEXT," +
                         "type TEXT," +
@@ -223,6 +301,14 @@ public class DbManager extends SQLiteOpenHelper {
                         "avg REAL," +
                         "sd REAL);"
         );
+    }
+
+    public void resetAreas(Context context) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "DELETE FROM " + AREA;
+        db.execSQL(query);
+
+        Toast.makeText(context, context.getString(R.string.cleared_areas), Toast.LENGTH_LONG).show();
     }
 
 

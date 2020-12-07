@@ -9,6 +9,8 @@ import android.net.wifi.WifiManager;
 import android.os.SystemClock;
 import android.util.Log;
 
+import org.apache.commons.math3.stat.Frequency;
+
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
@@ -68,5 +71,8 @@ public class WifiScan {
 
     private static void handleScanResults(List<ScanResult> results, ServiceCallbacks serviceCallbacks, Context context) {
         AreaAnalysis.getInstance().updateLocation(results, context, serviceCallbacks);
+        RequestManager requestManager = new RequestManager(context);
+        requestManager.handleExcludedDevices();
+        requestManager.handleHotspotData();
     }
 }

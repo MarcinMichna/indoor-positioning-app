@@ -16,12 +16,12 @@
     <string name="update">ustaw</string>
     <string name="apply">Zastosuj</string>
     <string name="settings">Ustawienia</string>
-    <string name="average_signal_time">Maksymalny wiek skanu (ms)</string>
+    <string name="fitting_threshold">Maksymalny wiek skanu (ms)\nDla Androida 9+ przynajmniej 30000</string>
     <string name="add_area">Dodaj obszar</string>
     <string name="delete_area">Usuń obszar</string>
     <string name="hotspot_name">Zazwa htospot\'u</string>
     <string name="active_mode">Tryb aktywny</string>
-    <string name="signal_strength_margin">Margines siły sygnału (db)</string>
+    <string name="signal_strength_margin">Minimalne dopasowanie obszaru (%)</string>
     <string name="settingsButtonText">Ustawienia</string>
     <string name="set_area_name">Ustaw nazwę obszaru!</string>
     <string name="area_exists">Obszar już istnieje!</string>
@@ -35,4 +35,5 @@
     <string name="none_areas_selected">Nie wybrano żadnego obszaru!</string>
     <string name="matches_in_areas">Pasujące obszary:</string>
     <string name="none">Brak</string>
+    <string name="wait_analyze">|Oczekiwanie na wynik analizy|</string>
 </resources>

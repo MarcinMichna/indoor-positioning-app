@@ -17,6 +17,14 @@ public class HotspotData {
         this.sd = sd;
     }
 
+    public HotspotData(String esp, int minRssi, int maxRssi, double avg, double sd) {
+        this.esp = esp;
+        this.minRssi = minRssi;
+        this.maxRssi = maxRssi;
+        this.avg = avg;
+        this.sd = sd;
+    }
+
     @Override
     public String toString() {
         return "HotspotData{" +
