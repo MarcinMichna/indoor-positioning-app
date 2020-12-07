@@ -19,15 +19,18 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
+import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
+import pl.michnam.app.core.view.ResultListAdapter;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.util.Tag;
 
@@ -39,8 +42,21 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initView();
         handlePermissions(); // if OK, runs onReady
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initView();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mainService != null) {
+            mainService.setServiceCallbacks(this);
+        }
     }
 
     @Override
@@ -49,9 +65,15 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         unbindServiceConnection();
     }
 
+
+
     private void onReady() {
         Log.i(Tag.DB, "Updating areas list");
-        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
+        //new DbManager(this).resetTables();
+        DbManager dbManager = new DbManager(this);
+        AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
+        areaAnalysis.updateAreas(dbManager.getAllAreasInfo());
+        areaAnalysis.setAreasHotspot(dbManager.getAllAreasInfoHotspot());
     }
 
     ////////////////////////////
@@ -100,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
         handleLocation();
         if (!btAdapter.isEnabled()) {
             Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBT, 13 );
+            startActivityForResult(enableBT, 13);
         }
     }
 
@@ -121,14 +143,17 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     }
 
     private void requestPermissionIfNeeded() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) bindServiceConnection();
-        else requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); // Runs onRequestPermissionsResult after user action
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            bindServiceConnection();
+        else
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); // Runs onRequestPermissionsResult after user action
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 1) {
-            if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED) bindServiceConnection();
+            if (Arrays.asList(grantResults).get(0)[0] != PackageManager.PERMISSION_DENIED)
+                bindServiceConnection();
             else requestPermissionIfNeeded();
         }
     }
@@ -155,43 +180,55 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW //////
     /////////////////
     private Button startButton;
-    private Button areaButton;
-    private Button resetAreasButton;
-    private TextView debugInfo;
-    private EditText areaName;
+    private ListView resultListView;
+    private TextView bestMatch;
+    private TextView excludedDevices;
+
+    private ResultListAdapter resultAdapter;
+    private ArrayList<String> results;
 
     private void initView() {
         startButton = findViewById(R.id.startButton);
-        areaButton = findViewById(R.id.areaButton);
-        resetAreasButton = findViewById(R.id.resetAreas);
-        debugInfo = findViewById(R.id.debugInfo);
-        areaName = findViewById(R.id.areaName);
+        resultListView = findViewById(R.id.resultListView);
+        bestMatch = findViewById(R.id.best_match);
+        excludedDevices = findViewById(R.id.excluded_devices);
 
-        areaName.setActivated(false);
         startButton.setActivated(false);
+        bestMatch.setText(R.string.none);
+        excludedDevices.setText(R.string.none);
 
         if (MainService.isWorking()) startButton.setText(R.string.stop);
         else startButton.setText(R.string.start);
+
+        setCurrentArea("");
+        setExcludedDevices(new ArrayList<>());
+
+        initResultList();
     }
 
     ////////////////////////////
     ///// VIEW CONTROLLER //////
     ////////////////////////////
     public void onStartButtonClick(View v) {
-        AreaAnalysis.getInstance().updateAreas(new DbManager(this).getAllAreasInfo());
+        RequestManager requestManager = new RequestManager(this);
+        requestManager.handleHotspotData();
+
+        DbManager dbManager = new DbManager(this);
+        AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
+        areaAnalysis.updateAreas(dbManager.getAllAreasInfo());
+        areaAnalysis.setAreasHotspot(dbManager.getAllAreasInfoHotspot());
+
         updateButtonAndService();
     }
 
-    public void onAddAreaButtonClick(View v) {
+    public void onSettingsClicked(View v) {
         mainService.stopScan();
-        Intent intent = new Intent(this, AreaCreationActivity.class);
-        intent.putExtra("areaName", areaName.getText().toString().trim());
-        startActivity(intent);
+        startActivity(new Intent(this, SettingsActivity.class));
     }
 
-    public void onResetClicked(View v) {
-        if (MainService.isWorking()) onStartButtonClick(v);
-        new DbManager(this).resetAreas(this);
+    @Override
+    public void onBackPressed() {
+        finish();
     }
 
     /////////////////////////
@@ -199,24 +236,51 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     /////////////////////////
     private void updateButtonAndService() {
         if (MainService.isWorking()) {
-            debugInfo.setText("");
+            setResults(new ArrayList<>());
             startButton.setText(R.string.start);
             mainService.stopScan();
-        }
-        else {
+            excludedDevices.setText(R.string.none);
+            bestMatch.setText(R.string.none);
+        } else {
             startButton.setText(R.string.stop);
             mainService.startScan();
+            bestMatch.setText(R.string.wait_analyze);
         }
+    }
+
+    private void initResultList() {
+        results = new ArrayList<>();
+        resultAdapter = new ResultListAdapter(this, R.layout.activity_main, results);
+        resultListView.setAdapter(resultAdapter);
     }
 
     private void enableButtons() {
         startButton.setActivated(true);
-        areaButton.setActivated(true);
     }
 
     @Override
-    public void setDebugMessage(String msg) {
-        if (MainService.isWorking())debugInfo.setText(msg);
+    public void setResults(ArrayList<String> res) {
+        Log.v(Tag.UI, "UI - Number of devices matching in areas: " + res.toString());
+        if (MainService.isWorking()) {
+            results.clear();
+            results.addAll(res);
+            resultAdapter.notifyDataSetChanged();
+        }
     }
 
+    @Override
+    public void setCurrentArea(String currentArea) {
+        if (MainService.isWorking()) {
+            if (currentArea.equals("")) bestMatch.setText(R.string.none);
+            else bestMatch.setText(currentArea);
+        }
+    }
+
+    @Override
+    public void setExcludedDevices(ArrayList<String> excluded) {
+        if (MainService.isWorking()) {
+            if (excluded.size() == 0) excludedDevices.setText(R.string.none);
+            else excludedDevices.setText(excluded.toString());
+        }
+    }
 }
