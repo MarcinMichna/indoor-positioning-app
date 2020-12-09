@@ -1,49 +1,57 @@
 # indoor-positioning-app
 
-System przeznaczony do lokalizacji użytkownika wewnątrz budynku.
+System przeznaczony do lokalizacji użytkownika telefonu mobilnego wewnątrz budynku.
 
-### Opis
+### Opis projektu
 Celem pracy jest projekt i implementacja oprogramowania zbierającego dane o natężeniu sygnałów WiFi i Bluetooth celem ustalenia pozycji urządzenia mobilnego (telefonu) użytkownika wewnątrz budynku.
 Brane pod uwagę będą dwa przypadki wykorzystania urządzeń zewnętrznych wyposażonych w nadajniki WiFi lub Bluetooth: pasywne oraz aktywne.  
 Pasywne polega na odczycie siły sygnału z innych urządzeń jedynie w urządzeniu mobilnym.  
 Aktywne polega na odczycie siły sygnałów zarówno w urządzeniu mobilnym jak i w urządzeniach wyposażonych w nadajniki WiFi lub Bluetooth.  
 
-### Aktualne działanie aplikacji
-Aplikacja umożliwia definiowanie własnych obszarów. Podczas dodawania obszaru, użytkownik wybiera z listy, siła których sygnałów będzie używana podczas działania aplikacji.
-W podglądzie pojawia się informacja o aktualnym zakresie siły sygnału. Podczas dodawania obszaru, użytkownik powinien się po nim przemieszczać.  
 
-Po wciśnięciu przycisku START na ekranie głównym aplikacji, w tle rozpoczyna się skanowanie urządzeń WiFi i Bluetooth Low Energy. Następnie wyliczana jest średnia siła sygnału dla każdego urządzenia z kilku ostatnich sekund i dla każdego obszaru zlicza się ilość urządzeń, które znajdują się w zakresie siły sygnału każdego obszaru. Obszar z największą liczbą pasujących urządzeń jest obszarem, w którym się znajdujemy.
-
-<p float="left">
-   <img src="https://user-images.githubusercontent.com/33720728/100105647-e5fcef00-2e67-11eb-8491-d728493d46bd.jpg"  height="300">
-   <img src="https://user-images.githubusercontent.com/33720728/100105639-e39a9500-2e67-11eb-8152-7c3f23705304.jpg"  height="300">
-   <img src="https://user-images.githubusercontent.com/33720728/100110351-20b55600-2e6d-11eb-842e-8882402a1384.jpg"  height="300">
-</p>
-
-#### Dokładność
-
-W sutuacji przedstawionej na poniższym schemacie (4 obszary obok siebie, urządzenia rozłożone w miarę równomiernie, zajdujemy się w jednym z nich - zaznaczone gwiazdką), po analizie opisanej wyżej, aplikacja pokazała, że ilość pasujących zasięgów dla poszczególnych obszarów wynosi:
-sypialnia: 6  
-łazienka: 5  
-kuchnia: 5  
-buiro: 8  
-Jak widać, biuro nie ma znaczącej przewagi. Często zdaża się, że liczba pasujących przedziałów jest większa dla obszaru znajdującego się obok.
-
-<img src="https://user-images.githubusercontent.com/33720728/100122325-890a3480-2e79-11eb-86c8-cc08fae516f5.png"  height="300">
-
-### Zasada działania
+### Opis działania
 
 System składa się z kilku elementów:
-* **aplikacja mobilna** - ma za zadanie wyznaczyć w jakim obszarze znajduje sie użytkownik na podstawie siły sygnałów wifi i bluetooth, a także opcjonalnych danych z ESP32. 
-    * użytkownik dodaje swoje obszary w aplikacji 
-    * podczas dodawania obszaru użytkownik przemieszcza się po obszarze, tak, aby aplikacja była w stanie uzyskać siły sygnałów w tych miejscach
-    * wyliczane są zakresy sił sygnałów do każdego urządzenia w jakich uznaje się, że użytkownik znajduje się w danej lokalizacji. Jest to wersja próbna, aby sprawdzić na ile dokładne jest to rozwiązanie. Gdy nie będzie żadnych technologicznych problemów do tej pory, zajmę się stworzeniem dokładniejszego i jak najbardziej optymalnego pod względem zużycia energii algorytmem.
-    * dzięki danym z ESP32 które z założenia nie poruszają się, jesteśmy w stanie stwierdzić, gdy jakieś inne urządzenie, którego używamy, zmieniło swoją lokalizację, a także przydadzą się przy bardziej zaawansowanym algorytmie lokalizacji.
+* **aplikacja mobilna** - skanuje urządzenia emitujące sygnały Wifi i Bluetooth Low Energy, a także ewentualne dane z urządzeń ESP i na podstawie tych danych wyznacza pozycję użytkownika
 * **mikrokontrolery ESP32** - posiadają kilka funkcji:
-    * działają jako Access Pointy dzięki czemu można zmierzyć siłę ich sygnałów
-    * skanują dostępne urządzenia w okolicy i analizują, czy urządzenia nie zmieniły swojego położenia
-* **web api** - serwer służący do przekazania danych z ESP32 do aplikacji. Mimo, że wydaje się to nieoptymalnym rozwiązaniem ze względu na czas jaki zajmie przekazanie danych i wymaga ciągłego połączenia z internetem, wydaje mi się to najlepszą opcją. Alternatywą byłoby zrobienie takiego serwera lokalnie na jednym z ESP32, lub łączenie się z nimi bezpośrednio, lecz oznaczałoby to większe zużycie energii, a także nie byłoby wygodne, ponieważ ograniczałoby to używanie modułu BT do innych celów. Co więcej, ciągłe połączenie z internetem jest już raczej standardem w obecnych czasach. Dodatkowo analiza zmiany położenia urządzeń których siłę sygnału mierzymy, mogłaby się tutaj odbywać.
+    * działają jako Access Pointy, dzięki czemu można zmierzyć siłę ich sygnałów
+    * skanują dostępne urządzenia w okolicy i przesyłają te dane po HTTP do API webowego
+* **web api** - serwer służący do analizy danych pozyskanych z ESP. Wylicza średnią referencyjną siłę sygnału do każdego urządzenia, którego siłę sygnału wykorzystujemy w aplikacji i w przypadku zmiany pozycji, dodaje to je do listy wykluczonych, aby nie były brane pod uwagę podczas wyznaczania lokalizacji. Dodatkowo w przypadku gdy użytkownik włączy w aplikacji hotspot, przekazuje dane o sile sygnału do telefonu z ESP.
+
+### Działanie aplikacji mobilnej
+#### Obszary
+
+Podstawą działania aplikacji są obszary zdefiniowane przez użytkownika.  
+Podczas dodawania obszarów, użytkownik przemieszcza się po pokoju, tak aby równomiernie go zeskanować.  
+Dodatkowo, istnieje możliwość wybrania, których z dostępnych urządzeń chcemy użyć do lokalizowacji, a także nazwania obszaru.
+Po zakończeniu skanowania wyliczana jest średnia siła sygnału i odchylenie standardowe do każdego urządzenia, a następnie dodawane te informacje dodawane są do bazy dancyh. W przypadku, gdy aplikacja działa w trybie aktywnym, a użytkownik włączył hotspot wifi, analogiczne parametry są wyliczane z danych dostępnych z ESP.
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/33720728/97166298-52130700-1785-11eb-9a1d-84fc14fbce3d.png"> </br>
-  Poglądowy schemat systemu
+  <img src="https://user-images.githubusercontent.com/33720728/101677846-6a04c880-3a5d-11eb-8383-5400b56c94f3.jpg" height="400"> </br>
+  Widok dodawania obszaru
 </p>
+
+#### Wyznaczanie lokalizacji użytkownika
+
+Po dodaniu obszarów i wciśnięciu przycisku START na ekranie głównym, w tle zaczyna się skanowanie. Po uzyskaniu wyników skanowana, analizowane są dane i wyznaczana jest najbardziej prawdopodobny obszar, w którym znajduje się użytkownik. Gdy jest to inny obszar, to aktualizowane zostaje powiadomienie. Dodatkowo w przypadku gdy otworzona jest aplikacja, to na głównym widoku pokazywane są szczegółowe wyniki analizy. 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/33720728/101677843-68d39b80-3a5d-11eb-900a-1958eef56002.jpg" height="400"> </br>
+  Główny widok z wynikami z analizy
+</p>
+
+#### Algorytm wyznaczania lokalizacji użytkownika
+
+Przy skanowaniu obszarów przyjmujemy, że rozkład siły sygnału do każdego urządzenia w obszarze jest zbliżony do rozkładu normalnego. Dzięki temu, że mamy informację o średniej sile sygnału i odchyleniu standardowym, używając wzoru na dystrybuantę, możemy wyznaczyć dla każdego urządzenia jak daleko od wartości oczekiwanej jest aktualna siła sygnału. W przypadku, gdy apliakcja działa w trybie aktywnym, pobierana z web api jest lista urządzeń, które zmieniły swoją pozycję, a także, siła sygnałów z ESP do naszego hotspotu w telefonie. Następnie wyliczamy, dla którego obszaru odchylenia te są najmniejsze i na tej podstawie wyznaczamy lokalizację użytkownika. 
+
+#### Ustawiania
+
+W ustawieniach istnieje możliwość zmiany trybu z pasywnego na aktywny, zmiany nazwy hotspotu, zmiany minimalnego dosasowania do obszaru (aby wiedzieć, kiedy nie znajdujemy się w żadnym obszarze), a także z jakiego czasu brana jest średnia zeskanowanych urządzeń (czym większy, tym większa dokładność, lecz dłużej zajmuje aktualizacja po przemieszczeniu się). Dodatkowo w ustawianiach można dodać lub usunąć obszary
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/33720728/101677848-6a04c880-3a5d-11eb-85ee-68f1e811b6d1.jpg" height="400"> </br>
+  Widok ustawień
+</p>
+
+### UWAGI
+
+* Aplikacja została stworzona na urządzenia z Androidem 8.0 lub nowszym, lecz niestety Google wraz z kolejną wersją systemu wprowadza coraz większe restrykcje do używania WiFi i Bluetooth, przez co od wersji 9.0 Wifi można skanować jedynie 4 razy w ciągu 2 minut. W związku z tym aplikację najlepiej testować na Androidzie 8.0 lub 8.1, a w przypadku używania wyższych wersji, ustawić maksymalny wiek skanu na wartość większą niż 30000ms (30 sekund).
+
+* Pod uwagę brane są jedynie urządzenia Bluetooth, które emitują sygnał Bluetooth Low Energy (większośc urządzeń stale udostęniających Bluetooth używa właśnie tej wersji).
