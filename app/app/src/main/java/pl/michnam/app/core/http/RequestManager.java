@@ -25,15 +25,16 @@ import pl.michnam.app.sql.entity.HotspotData;
 import pl.michnam.app.util.MathCalc;
 import pl.michnam.app.util.Tag;
 
+import static pl.michnam.app.config.AppConfig.host;
+
 public class RequestManager {
-    private final String HOST = "http://michnam.pl:5000";
-    private final String URL_HOTSPOT_NAME_POST = "http://michnam.pl:5000/hotspotName";
-    private final String URL_CLEAR_HOTSPOT = "http://michnam.pl:5000/hotspotClear";
-    private final String URL_HOTSPOT_AGE_POST = "http://michnam.pl:5000/hotspotAge";
-    private final String URL_WATCHED_DEVICES_POST = "http://michnam.pl:5000/watchedDevices";
-    private final String URL_HOTSPOT_GET = "http://michnam.pl:5000/hotspot";
-    private final String URL_HOTSPOT_AREA_GET = "http://michnam.pl:5000/hotspotArea";
-    private final String URL_EXCLUDED_DEVICES_GET = "http://michnam.pl:5000/excludedDevices";
+    private final String URL_HOTSPOT_NAME_POST = host + "/hotspotName";
+    private final String URL_CLEAR_HOTSPOT = host + "/hotspotClear";
+    private final String URL_HOTSPOT_AGE_POST = host + "/hotspotAge";
+    private final String URL_WATCHED_DEVICES_POST = host + "/watchedDevices";
+    private final String URL_HOTSPOT_GET = host + "/hotspot";
+    private final String URL_HOTSPOT_AREA_GET = host + "/hotspotArea";
+    private final String URL_EXCLUDED_DEVICES_GET = host + "/excludedDevices";
 
 
     private RequestQueueHttp queue;

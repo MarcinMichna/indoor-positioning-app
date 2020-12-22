@@ -5,6 +5,8 @@ import json
 import copy
 from datetime import datetime
 
+espCount = 4
+
 lengthThreshold = 1000
 numberOfHotspotSignals = 5000
 maxRssiDiff = 5  # in db
@@ -27,33 +29,10 @@ hotspotData = []
 watchedDevicesWifi = []
 watchedDevicesBt = []
 
-espDataWifi = {
-    "ESP_1_WIFI": {},
-    "ESP_2_WIFI": {},
-    "ESP_3_WIFI": {},
-    "ESP_4_WIFI": {}
-}
-
-espDataBt = {
-    "ESP_1_BT": {},
-    "ESP_2_BT": {},
-    "ESP_3_BT": {},
-    "ESP_4_BT": {}
-}
-
-avgEspDataWifi = {
-    "ESP_1_WIFI": {},
-    "ESP_2_WIFI": {},
-    "ESP_3_WIFI": {},
-    "ESP_4_WIFI": {}
-}
-
-avgEspDataBt = {
-    "ESP_1_BT": {},
-    "ESP_2_BT": {},
-    "ESP_3_BT": {},
-    "ESP_4_BT": {}
-}
+espDataWifi = {}
+espDataBt = {}
+avgEspDataWifi = {}
+avgEspDataBt = {}
 
 avgDeviceDataBt = {}
 avgDeviceDataWifi = {}
@@ -87,10 +66,12 @@ def clearHotspot():
         hotspotData.clear()
         return json.dumps({"status": "OK"}, default=str)
 
+
 @app.route('/hotspotArea', methods=['GET'])
 def getHotspotArea():
     with lock:
         return json.dumps({"data": hotspotData}, default=str)
+
 
 @app.route('/hotspotAge', methods=['POST'])
 def setHotspotMaxAge():
@@ -198,8 +179,6 @@ def add():
         global recentDataBt
         recentDataBt = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxDeviceSignalAge, dataBle))
 
-
-
         clearEspData()
 
         global espDataWifi
@@ -287,19 +266,11 @@ def clearEspData():
 def clearAvgEspData():
     global avgEspDataWifi
     global avgEspDataBt
-    avgEspDataWifi = {
-        "ESP_1_WIFI": {},
-        "ESP_2_WIFI": {},
-        "ESP_3_WIFI": {},
-        "ESP_4_WIFI": {}
-    }
-
-    avgEspDataBt = {
-        "ESP_1_BT": {},
-        "ESP_2_BT": {},
-        "ESP_3_BT": {},
-        "ESP_4_BT": {}
-    }
+    for i in range(1, espCount + 1):
+        nameWifi = "ESP_" + str(i) + "_WIFI"
+        nameBT = "ESP_" + str(i) + "_BT"
+        avgEspDataWifi[nameWifi] = {}
+        avgEspDataBt[nameBT] = {}
 
 
 @app.route('/get', methods=['GET'])
@@ -310,6 +281,21 @@ def get():
         dataWifi.clear()
         dataBle.clear()
         return json.dumps({"wifi": resWifi, "ble": resBle}, default=str)
+
+
+def setupVariables():
+    global espDataWifi
+    global espDataBt
+    global avgEspDataWifi
+    global avgEspDataBt
+
+    for i in range(1, espCount + 1):
+        nameWifi = "ESP_" + str(i) + "_WIFI"
+        nameBT = "ESP_" + str(i) + "_BT"
+        espDataWifi[nameWifi] = {}
+        espDataBt[nameBT] = {}
+        avgEspDataWifi[nameWifi] = {}
+        avgEspDataBt[nameBT] = {}
 
 
 #################
@@ -361,4 +347,5 @@ def checkReferenceData():
 
 
 if __name__ == '__main__':
+    setupVariables()
     app.run(host='0.0.0.0', debug=True)
