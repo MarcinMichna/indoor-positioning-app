@@ -36,4 +36,5 @@
     <string name="matches_in_areas">Pasujące obszary:</string>
     <string name="none">Brak</string>
     <string name="wait_analyze">|Oczekiwanie na wynik analizy|</string>
+    <string name="no_scan_results">Brak wyników skanu</string>
 </resources>

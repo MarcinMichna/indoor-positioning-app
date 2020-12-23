@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
             mainService = binder.getService();
             boundService = true;
             mainService.setServiceCallbacks(MainActivity.this);
+            mainService.setView();
             enableButtons();
             onReady();
         }
@@ -210,8 +211,8 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
     ///// VIEW CONTROLLER //////
     ////////////////////////////
     public void onStartButtonClick(View v) {
-        RequestManager requestManager = new RequestManager(this);
-        requestManager.handleHotspotData();
+        //RequestManager requestManager = new RequestManager(this);
+        //requestManager.handleHotspotData();
 
         DbManager dbManager = new DbManager(this);
         AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
@@ -260,27 +261,35 @@ public class MainActivity extends AppCompatActivity implements ServiceCallbacks 
 
     @Override
     public void setResults(ArrayList<String> res) {
-        Log.v(Tag.UI, "UI - Number of devices matching in areas: " + res.toString());
-        if (MainService.isWorking()) {
-            results.clear();
-            results.addAll(res);
-            resultAdapter.notifyDataSetChanged();
-        }
+        runOnUiThread(() -> {
+            Log.v(Tag.UI, "UI - Number of devices matching in areas: " + res.toString());
+            if (MainService.isWorking()) {
+                results.clear();
+                results.addAll(res);
+                resultAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     @Override
     public void setCurrentArea(String currentArea) {
-        if (MainService.isWorking()) {
-            if (currentArea.equals("")) bestMatch.setText(R.string.none);
-            else bestMatch.setText(currentArea);
-        }
+        runOnUiThread(() -> {
+            if (MainService.isWorking()) {
+                if (currentArea.equals("")) bestMatch.setText(R.string.none);
+                else bestMatch.setText(currentArea);
+            }
+        });
+
     }
 
     @Override
     public void setExcludedDevices(ArrayList<String> excluded) {
-        if (MainService.isWorking()) {
-            if (excluded.size() == 0) excludedDevices.setText(R.string.none);
-            else excludedDevices.setText(excluded.toString());
-        }
+        runOnUiThread(() -> {
+            if (MainService.isWorking()) {
+                if (excluded.size() == 0) excludedDevices.setText(R.string.none);
+                else excludedDevices.setText(excluded.toString());
+            }
+        });
+
     }
 }

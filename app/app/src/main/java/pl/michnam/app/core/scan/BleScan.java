@@ -22,7 +22,7 @@ public class BleScan {
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             //Log.d(Tag.BLE, "Ble name: " + result.getDevice().getName());
-            //Log.d(Tag.BLE, "Ble device: " + result.toString());
+//            Log.d(Tag.BLE, "Ble device: " + result.toString());
             AreaAnalysis.getInstance().addResBle(result);
         }
     };

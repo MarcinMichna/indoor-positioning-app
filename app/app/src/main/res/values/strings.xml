@@ -36,4 +36,5 @@
     <string name="matches_in_areas">Matches in areas:</string>
     <string name="none">None</string>
     <string name="wait_analyze">|Waiting for scan analyze|</string>
+    <string name="no_scan_results">No scan results</string>
 </resources>

@@ -11,8 +11,14 @@ int bleScanTime = 2; // in seconds
 
 
 const char *espName = "ESP_4";
+
+// pattern: ESP_<number>_WIFI
 const char *espNameWifi = "ESP_4_WIFI";
+
+// pattern: ESP_<number>_BT
 const char *espNameBt = "ESP_4_BT";
+
+String serverName = "http://michnam.pl:5000/add";
 
 
 // Access Point
@@ -27,7 +33,7 @@ BLEScan* bleScanner;
 
 
 // REST
-String serverName = "http://michnam.pl:5000/add";
+
 String json = "";
 
 class BleScanResult: public BLEAdvertisedDeviceCallbacks {

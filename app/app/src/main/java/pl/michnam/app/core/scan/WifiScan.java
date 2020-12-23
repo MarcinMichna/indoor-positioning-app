@@ -27,7 +27,7 @@ import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
 
 public class WifiScan {
-    public static void startWifiScan(Context context, ServiceCallbacks serviceCallbacks) {
+    public static void startWifiScan(Context context) {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
         BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
@@ -36,7 +36,7 @@ public class WifiScan {
                 boolean noError = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
                 if (noError) {
                     List<ScanResult> results = wifiManager.getScanResults();
-                    handleScanResults(results, serviceCallbacks, context);
+                    handleScanResults(results);
                 } else Log.w(Tag.WIFI, "WIFI - error while receiving scan results");
                 if (MainService.isWorking()) scanLoop(context);
                 else {
@@ -61,7 +61,10 @@ public class WifiScan {
                     @Override
                     public void run() {
                         boolean successfulScan = wifiManager.startScan(); // wifiScanReceiver.onReceive after scan
-                        if (!successfulScan) Log.i(Tag.WIFI, "WIFI - Error while starting scanning");
+                        if (!successfulScan){
+                            Log.i(Tag.WIFI, "WIFI - Error while starting scanning");
+                            if (MainService.isWorking()) scanLoop(context);
+                        }
                     }
                 },
                 AppConfig.wifiScanWaitTime
@@ -69,10 +72,7 @@ public class WifiScan {
 
     }
 
-    private static void handleScanResults(List<ScanResult> results, ServiceCallbacks serviceCallbacks, Context context) {
-        AreaAnalysis.getInstance().updateLocation(results, context, serviceCallbacks);
-        RequestManager requestManager = new RequestManager(context);
-        requestManager.handleExcludedDevices();
-        requestManager.handleHotspotData();
+    private static void handleScanResults(List<ScanResult> results) {
+        AreaAnalysis.getInstance().addWifiResults(results);
     }
 }

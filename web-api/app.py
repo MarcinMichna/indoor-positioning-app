@@ -57,6 +57,7 @@ def getHotspot():
     with lock:
         timestamp = datetime.now().replace(microsecond=0)
         recent = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxHotspotAge, hotspotData))
+        app.logger.info("Hotspot data size: {}".format(len(recent)))
         return json.dumps({"data": recent}, default=str)
 
 
@@ -131,8 +132,7 @@ def getExcludedDevices():
                                 else:
                                     notMatchingBtNumber[name] += 1
 
-        app.logger.info(
-            "Number of signals not matching. WIFI: {}, BT: {}".format(notMatchingWifiNumber, notMatchingBtNumber))
+        #app.logger.info("Number of signals not matching. WIFI: {}, BT: {}".format(notMatchingWifiNumber, notMatchingBtNumber))
 
         notMatchingWifi = []
         notMatchingBt = []

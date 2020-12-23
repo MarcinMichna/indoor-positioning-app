@@ -14,12 +14,14 @@ import androidx.core.app.NotificationCompat;
 
 import java.util.ArrayList;
 
+import pl.michnam.app.App;
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
 import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.scan.BleScan;
 import pl.michnam.app.core.scan.BtScan;
+import pl.michnam.app.core.scan.ScanManager;
 import pl.michnam.app.core.scan.WifiScan;
 
 import static pl.michnam.app.App.CHANNEL_ID;
@@ -38,9 +40,7 @@ public class MainService extends Service {
 
     public void startScan() {
         working = true;
-
-        WifiScan.startWifiScan(this, serviceCallbacks);
-        BleScan.startBleScan(this);
+        ScanManager.startScanning(App.getInstance(), serviceCallbacks);
     }
 
     public void stopScan() {

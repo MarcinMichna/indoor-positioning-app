@@ -187,6 +187,7 @@ public class RequestManager {
                 }
                 DbManager dbManager = new DbManager(context);
                 dbManager.addNewAreaHotspot(dbData, areaName);
+                Log.v(Tag.DB, "Added hotspot areas data: " + dbData.size());
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -210,14 +211,14 @@ public class RequestManager {
                         excludedWifi.add(jsonWifi.getString(i));
                     }
                 }
-                Log.i(Tag.HTTP, "Excluded WIFI: " + excludedWifi.toString());
+                //Log.i(Tag.HTTP, "Excluded WIFI: " + excludedWifi.toString());
 
                 if (jsonBt != null) {
                     for (int i = 0; i < jsonBt.length(); i++) {
                         excludedBt.add(jsonBt.getString(i));
                     }
                 }
-                Log.i(Tag.HTTP, "Excluded BT: " + excludedBt.toString());
+                //Log.i(Tag.HTTP, "Excluded BT: " + excludedBt.toString());
 
                 AreaAnalysis areaAnalysis = AreaAnalysis.getInstance();
                 areaAnalysis.setExcludedWifi(excludedWifi);
