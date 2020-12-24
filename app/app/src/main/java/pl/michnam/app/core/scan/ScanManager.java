@@ -1,6 +1,7 @@
 package pl.michnam.app.core.scan;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import java.util.TimerTask;
 
@@ -9,6 +10,7 @@ import pl.michnam.app.core.analysis.AreaAnalysis;
 import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
+import pl.michnam.app.util.Pref;
 
 public class ScanManager {
     public static void startScanning(Context context, ServiceCallbacks serviceCallbacks) {
@@ -18,10 +20,14 @@ public class ScanManager {
     }
 
     private static void apiLoop(Context context, ServiceCallbacks serviceCallbacks) {
+        SharedPreferences sharedPref = context.getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
+        boolean activeMode = sharedPref.getBoolean(Pref.activeMode, false);
+        if (activeMode) {
+            RequestManager requestManager = new RequestManager(context);
+            requestManager.handleExcludedDevices();
+            requestManager.handleHotspotData();
+        }
 
-        RequestManager requestManager = new RequestManager(context);
-        requestManager.handleExcludedDevices();
-        requestManager.handleHotspotData();
         new java.util.Timer().schedule(new TimerTask() {
             @Override
             public void run() {
