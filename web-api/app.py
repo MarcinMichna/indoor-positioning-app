@@ -6,7 +6,7 @@ import copy
 from datetime import datetime
 
 espCount = 4
-
+excludeThreshold = 2
 lengthThreshold = 1000
 numberOfHotspotSignals = 5000
 maxRssiDiff = 5  # in db
@@ -106,46 +106,50 @@ def updateWatchedDevices():
 @app.route('/excludedDevices', methods=['GET'])
 def getExcludedDevices():
     with lock:
-
         notMatchingWifiNumber = {}
         notMatchingBtNumber = {}
 
-        for device in watchedDevicesWifi:
-            if device in avgDeviceDataWifi:
-                for ssid, rssi in avgDeviceDataWifi[device].items():
-                    if device in referenceSignalsWifi:
-                        if ssid in referenceSignalsWifi[device]:
-                            if abs(referenceSignalsWifi[device][ssid] - avgDeviceDataWifi[device][ssid]) > maxRssiDiff:
-                                if device not in notMatchingWifiNumber:
-                                    notMatchingWifiNumber[device] = 1
-                                else:
-                                    notMatchingWifiNumber[device] += 1
-
-        for device in watchedDevicesBt:
-            if device in avgDeviceDataBt:
-                for name, rssi in avgDeviceDataBt[device].items():
-                    if device in referenceSignalsBt:
-                        if name in referenceSignalsBt[device]:
-                            if abs(referenceSignalsBt[device][name] - avgDeviceDataBt[device][name]) > maxRssiDiff:
-                                if name not in notMatchingBtNumber:
-                                    notMatchingBtNumber[name] = 1
-                                else:
-                                    notMatchingBtNumber[name] += 1
-
-        #app.logger.info("Number of signals not matching. WIFI: {}, BT: {}".format(notMatchingWifiNumber, notMatchingBtNumber))
+        calcMatchesWifi(notMatchingWifiNumber)
+        calcMatchesBle(notMatchingBtNumber)
 
         notMatchingWifi = []
         notMatchingBt = []
 
         for device, value in notMatchingWifiNumber.items():
-            if value >= 2:
+            if value >= excludeThreshold:
                 notMatchingWifi.append(device)
 
         for device, value in notMatchingBtNumber.items():
-            if value >= 2:
+            if value >= excludeThreshold:
                 notMatchingBt.append(device)
 
         return json.dumps({"wifi": notMatchingWifi, "bt": notMatchingBt}, default=str)
+
+
+def calcMatchesBle(notMatchingBtNumber):
+    for device in watchedDevicesBt:
+        if device in avgDeviceDataBt:
+            for name, rssi in avgDeviceDataBt[device].items():
+                if device in referenceSignalsBt:
+                    if name in referenceSignalsBt[device]:
+                        if abs(referenceSignalsBt[device][name] - avgDeviceDataBt[device][name]) > maxRssiDiff:
+                            if name not in notMatchingBtNumber:
+                                notMatchingBtNumber[name] = 1
+                            else:
+                                notMatchingBtNumber[name] += 1
+
+
+def calcMatchesWifi(notMatchingWifiNumber):
+    for device in watchedDevicesWifi:
+        if device in avgDeviceDataWifi:
+            for ssid, rssi in avgDeviceDataWifi[device].items():
+                if device in referenceSignalsWifi:
+                    if ssid in referenceSignalsWifi[device]:
+                        if abs(referenceSignalsWifi[device][ssid] - avgDeviceDataWifi[device][ssid]) > maxRssiDiff:
+                            if device not in notMatchingWifiNumber:
+                                notMatchingWifiNumber[device] = 1
+                            else:
+                                notMatchingWifiNumber[device] += 1
 
 
 @app.route('/add', methods=['POST'])
@@ -155,71 +159,86 @@ def add():
         wifiJson = request.json["wifi"]
         bleJson = request.json["ble"]
 
-        for i in wifiJson:
-            if len(dataWifi) > lengthThreshold:
-                dataWifi.pop(0)
-
-            i["timestamp"] = timestamp
-            dataWifi.append(i)
-
-            if len(hotspotData) > numberOfHotspotSignals:
-                hotspotData.pop(0)
-            if i["ssid"] == hotspotName:
-                hotspotData.append(i)
-
-        for i in bleJson:
-            if len(dataWifi) > lengthThreshold:
-                dataBle.pop(0)
-            i["timestamp"] = timestamp
-            dataBle.append(i)
-
-        global recentDataWifi
-        recentDataWifi = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxDeviceSignalAge, dataWifi))
-
-        global recentDataBt
-        recentDataBt = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxDeviceSignalAge, dataBle))
-
+        updateWifiResults(wifiJson, timestamp)
+        updateBleResults(bleJson, timestamp)
+        filterRecentResults(timestamp)
         clearEspData()
-
-        global espDataWifi
-        global espDataBt
-        for i in recentDataWifi:
-            for k in range(1, 5):
-                espName = "ESP_" + str(k)
-                espWifiName = espName + "_WIFI"
-                if i["esp"] == espName:
-                    if i["ssid"] in espDataWifi[espWifiName]:
-                        espDataWifi[espWifiName][i["ssid"]].append(i)
-                    else:
-                        espDataWifi[espWifiName][i["ssid"]] = [i]
-
-        for i in recentDataBt:
-            for k in range(1, 6):
-                espName = "ESP_" + str(k)
-                espBtName = espName + "_BT"
-                if i["esp"] == espName:
-                    if i["name"] in espDataBt[espBtName]:
-                        espDataBt[espBtName][i["name"]].append(i)
-                    elif i["name"] != "":
-                        espDataBt[espBtName][i["name"]] = [i]
-                    else:
-                        espDataBt[espBtName][i["addr"]] = [i]
-
+        processWifiData()
+        processBleData()
         calcAvgEspData()
-
-        for key, value in avgEspDataWifi.items():
-            for ssid, rssi in value.items():
-                if ssid not in avgDeviceDataWifi:
-                    avgDeviceDataWifi[ssid] = {}
-                avgDeviceDataWifi[ssid][key] = rssi
-
-        for key, value in avgEspDataBt.items():
-            for name, rssi in value.items():
-                if name not in avgDeviceDataBt:
-                    avgDeviceDataBt[name] = {}
-                avgDeviceDataBt[name][key] = rssi
+        structureData()
 
         return json.dumps({"status": "OK"}, default=str)
+
+
+def structureData():
+    for key, value in avgEspDataWifi.items():
+        for ssid, rssi in value.items():
+            if ssid not in avgDeviceDataWifi:
+                avgDeviceDataWifi[ssid] = {}
+            avgDeviceDataWifi[ssid][key] = rssi
+    for key, value in avgEspDataBt.items():
+        for name, rssi in value.items():
+            if name not in avgDeviceDataBt:
+                avgDeviceDataBt[name] = {}
+            avgDeviceDataBt[name][key] = rssi
+
+
+def processBleData():
+    global espDataBt
+    for i in recentDataBt:
+        for k in range(1, 6):
+            espName = "ESP_" + str(k)
+            espBtName = espName + "_BT"
+            if i["esp"] == espName:
+                if i["name"] in espDataBt[espBtName]:
+                    espDataBt[espBtName][i["name"]].append(i)
+                elif i["name"] != "":
+                    espDataBt[espBtName][i["name"]] = [i]
+                else:
+                    espDataBt[espBtName][i["addr"]] = [i]
+
+
+def processWifiData():
+    global espDataWifi
+    for i in recentDataWifi:
+        for k in range(1, 5):
+            espName = "ESP_" + str(k)
+            espWifiName = espName + "_WIFI"
+            if i["esp"] == espName:
+                if i["ssid"] in espDataWifi[espWifiName]:
+                    espDataWifi[espWifiName][i["ssid"]].append(i)
+                else:
+                    espDataWifi[espWifiName][i["ssid"]] = [i]
+
+
+def filterRecentResults(timestamp):
+    global recentDataWifi
+    recentDataWifi = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxDeviceSignalAge, dataWifi))
+    global recentDataBt
+    recentDataBt = list(filter(lambda x: (timestamp - x["timestamp"]).seconds < maxDeviceSignalAge, dataBle))
+
+
+def updateBleResults(bleJson, timestamp):
+    for i in bleJson:
+        if len(dataWifi) > lengthThreshold:
+            dataBle.pop(0)
+        i["timestamp"] = timestamp
+        dataBle.append(i)
+
+
+def updateWifiResults(wifiJson, timestamp):
+    for i in wifiJson:
+        if len(dataWifi) > lengthThreshold:
+            dataWifi.pop(0)
+
+        i["timestamp"] = timestamp
+        dataWifi.append(i)
+
+        if len(hotspotData) > numberOfHotspotSignals:
+            hotspotData.pop(0)
+        if i["ssid"] == hotspotName:
+            hotspotData.append(i)
 
 
 def calcAvgEspData():
@@ -271,16 +290,6 @@ def clearAvgEspData():
         nameBT = "ESP_" + str(i) + "_BT"
         avgEspDataWifi[nameWifi] = {}
         avgEspDataBt[nameBT] = {}
-
-
-@app.route('/get', methods=['GET'])
-def get():
-    with lock:
-        resWifi = copy.deepcopy(dataWifi)
-        resBle = copy.deepcopy(dataBle)
-        dataWifi.clear()
-        dataBle.clear()
-        return json.dumps({"wifi": resWifi, "ble": resBle}, default=str)
 
 
 def setupVariables():
