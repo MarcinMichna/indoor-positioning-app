@@ -27,7 +27,6 @@ import java.util.Arrays;
 
 import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
-import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.core.view.ResultListAdapter;

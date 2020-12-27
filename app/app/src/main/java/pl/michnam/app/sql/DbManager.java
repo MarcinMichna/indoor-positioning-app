@@ -14,7 +14,6 @@ import java.util.HashMap;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.core.http.model.HotspotResult;
 import pl.michnam.app.core.view.AreaItem;
 import pl.michnam.app.sql.entity.AreaData;
 import pl.michnam.app.sql.entity.HotspotData;
@@ -95,7 +94,6 @@ public class DbManager extends SQLiteOpenHelper {
             values.put(AREA_SD, item.getSd());
             if (item.isBt()) values.put(AREA_TYPE, "bt");
             else values.put(AREA_TYPE, "wifi");
-
             db.insert(AREA, null, values);
         }
     }

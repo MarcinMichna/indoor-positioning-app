@@ -7,7 +7,7 @@ import java.util.TimerTask;
 
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.analysis.AreaAnalysis;
-import pl.michnam.app.core.http.RequestManager;
+import pl.michnam.app.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Pref;
@@ -27,7 +27,6 @@ public class ScanManager {
             requestManager.handleExcludedDevices();
             requestManager.handleHotspotData();
         }
-
         new java.util.Timer().schedule(new TimerTask() {
             @Override
             public void run() {

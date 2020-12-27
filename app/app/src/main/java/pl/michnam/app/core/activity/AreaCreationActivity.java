@@ -27,7 +27,7 @@ import java.util.List;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.core.http.RequestManager;
+import pl.michnam.app.http.RequestManager;
 import pl.michnam.app.core.view.AreaItem;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.core.view.AreaListItemAdapter;

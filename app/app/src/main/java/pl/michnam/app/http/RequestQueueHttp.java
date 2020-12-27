@@ -1,4 +1,4 @@
-package pl.michnam.app.core.http;
+package pl.michnam.app.http;
 
 import android.content.Context;
 import android.graphics.Bitmap;

@@ -6,24 +6,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.os.SystemClock;
 import android.util.Log;
 
-import org.apache.commons.math3.stat.Frequency;
-
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.analysis.AreaAnalysis;
-import pl.michnam.app.core.http.RequestManager;
 import pl.michnam.app.core.service.MainService;
-import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.util.Tag;
 
 public class WifiScan {
@@ -56,20 +45,16 @@ public class WifiScan {
 
     private static void scanLoop(Context context) {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        new java.util.Timer().schedule(
-                new java.util.TimerTask() {
-                    @Override
-                    public void run() {
-                        boolean successfulScan = wifiManager.startScan(); // wifiScanReceiver.onReceive after scan
-                        if (!successfulScan){
-                            Log.i(Tag.WIFI, "WIFI - Error while starting scanning");
-                            if (MainService.isWorking()) scanLoop(context);
-                        }
-                    }
-                },
-                AppConfig.wifiScanWaitTime
-        );
-
+        new java.util.Timer().schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                boolean successfulScan = wifiManager.startScan();
+                if (!successfulScan){
+                    Log.i(Tag.WIFI, "WIFI - Error while starting scanning");
+                    if (MainService.isWorking()) scanLoop(context);
+                }
+            }
+        }, AppConfig.wifiScanWaitTime);
     }
 
     private static void handleScanResults(List<ScanResult> results) {

@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -15,10 +14,8 @@ import android.widget.Toast;
 
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
-import pl.michnam.app.core.http.RequestManager;
-import pl.michnam.app.sql.DbManager;
+import pl.michnam.app.http.RequestManager;
 import pl.michnam.app.util.Pref;
-import pl.michnam.app.util.Tag;
 
 public class SettingsActivity extends AppCompatActivity {
     private SwitchCompat switchCompat;

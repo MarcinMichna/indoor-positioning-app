@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.wifi.ScanResult;
 import android.os.SystemClock;
-import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.util.Log;
 import android.util.Pair;
 
@@ -27,8 +26,7 @@ import java.util.Map;
 import pl.michnam.app.R;
 import pl.michnam.app.config.AppConfig;
 import pl.michnam.app.core.activity.MainActivity;
-import pl.michnam.app.core.http.RequestManager;
-import pl.michnam.app.core.http.model.HotspotResult;
+import pl.michnam.app.http.model.HotspotResult;
 import pl.michnam.app.core.service.ServiceCallbacks;
 import pl.michnam.app.sql.entity.AreaData;
 import pl.michnam.app.sql.entity.HotspotData;
@@ -49,6 +47,10 @@ public class AreaAnalysis {
     private ArrayList<String> excludedWifi = new ArrayList<>();
     private ArrayList<String> excludedBt = new ArrayList<>();
     private ArrayList<String> resultProbabilities = new ArrayList<>();
+
+    int maxScanAge;
+    boolean activeMode;
+    int thresholdFitting;
 
     private String currentArea = "";
     boolean noResults = false;
@@ -74,180 +76,167 @@ public class AreaAnalysis {
     public synchronized void updateLocation(Context context, ServiceCallbacks callbacks) {
         HashMap<String, ArrayList<Integer>> strengthList = new HashMap<>();
         HashMap<String, Double> avgStrength = new HashMap<>();
+        HashMap<String, ArrayList<Integer>> hotspotRssiPerEsp = new HashMap<>();
+        HashMap<String, Double> hotspotAvgRssiPerEsp = new HashMap<>();
+        HashMap<String, Double> probabilityPerArea = new HashMap<>();
 
-        boolean nullCallback = false;
-        if (callbacks == null) nullCallback = true;
+        updatePreferences(context);
+        wifiAgeFiltering(maxScanAge);
+        bleAgeFiltering(maxScanAge);
+        noResults = false;
+        if (hotspotData.size() == 0 && currentResWifi.size() == 0 && currentResBle.size() == 0) {
+            updateNotificationArea(context.getString(R.string.no_scan_results), context);
+            noResults = true;
+        } else {
+            rssiWifiList(strengthList);
+            rssiBleList(strengthList);
+            for (String key : strengthList.keySet())
+                avgStrength.put(key, calculateAverage(strengthList.get(key)));
+            if (activeMode) handleHotspotData(hotspotRssiPerEsp, hotspotAvgRssiPerEsp);
+            for (Map.Entry<String, ArrayList<AreaData>> area : areas.entrySet()) {
+                ArrayList<Double> distributions = new ArrayList<>();
+                ArrayList<Double> diffToCenter = new ArrayList<>();
 
+                calculateAreaDistributions(avgStrength, area, distributions);
+                if (activeMode) calculateDistributionsHotspot(hotspotAvgRssiPerEsp, area, distributions);
+                for (double distribution : distributions)
+                    diffToCenter.add(Math.abs(distribution - 0.5));
+                double avgDiffToCenter = MathCalc.averageListDouble(diffToCenter);
+                probabilityPerArea.put(area.getKey(), avgDiffToCenter);
+            }
+            String bestAreaMatch = findBestMatch(probabilityPerArea, thresholdFitting);
+            if (!currentArea.equals(bestAreaMatch)) {
+                currentArea = bestAreaMatch;
+                updateNotificationArea(context.getString(R.string.notif_in_area) + bestAreaMatch, context);
+            }
+            updateUiInfo(callbacks, probabilityPerArea, bestAreaMatch);
+        }
+    }
 
-        // update list of results to have only recent values
+    private void updatePreferences(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
+        maxScanAge = sharedPref.getInt(Pref.scanAge, AppConfig.maxScanAge);
+        activeMode = sharedPref.getBoolean(Pref.activeMode, false);
+        thresholdFitting = sharedPref.getInt(Pref.fittingThreshold, -1);
+    }
+
+    private String findBestMatch(HashMap<String, Double> probabilityPerArea, int thresholdFitting) {
+        String bestAreaMatch = "";
+        double min = 1;  // all values are < 0
+        for (Map.Entry<String, Double> area : probabilityPerArea.entrySet()) {
+            if (area.getValue() < min) {
+                min = area.getValue();
+                bestAreaMatch = area.getKey();
+            }
+        }
+
+        double normalizeResult = Math.round(100 - (min * 100) * 2);
+        if (normalizeResult < thresholdFitting) bestAreaMatch = "";
+        return bestAreaMatch;
+    }
+
+    private void updateUiInfo(ServiceCallbacks callbacks, HashMap<String, Double> probabilityPerArea, String bestAreaMatch) {
+        ArrayList<Pair<String, Double>> resUnordered = new ArrayList<>();
+        for (Map.Entry<String, Double> area : probabilityPerArea.entrySet()) {
+            resUnordered.add(new Pair<>(area.getKey(), area.getValue()));
+        }
+
+        resUnordered.sort(Comparator.comparing(p -> p.second));
+
+        resultProbabilities = new ArrayList<>();
+        for (Pair<String, Double> item : resUnordered)
+            resultProbabilities.add(item.first + ": " + Math.round(100 - (item.second * 100) * 2) + "%");
+        Log.d(Tag.ANALYZE, "Analyze result probabilites: " + resultProbabilities);
+
+        if (callbacks != null) {
+            callbacks.setResults(resultProbabilities);
+            callbacks.setCurrentArea(bestAreaMatch);
+            ArrayList<String> excludedAll = new ArrayList<>();
+            excludedAll.addAll(excludedWifi);
+            excludedAll.addAll(excludedBt);
+            callbacks.setExcludedDevices(excludedAll);
+        }
+    }
+
+    private void calculateDistributionsHotspot(HashMap<String, Double> hotspotAvgRssiPerEsp, Map.Entry<String, ArrayList<AreaData>> area, ArrayList<Double> distributions) {
+        NormalDistribution dist;
+        if (areasHotspot.containsKey(area.getKey())) {
+            for (HotspotData device : areasHotspot.get(area.getKey())) {
+                if (hotspotAvgRssiPerEsp.containsKey(device.getEsp())) {
+                    dist = new NormalDistribution(device.getAvg(), device.getSd());
+                    double currentSignal = hotspotAvgRssiPerEsp.get(device.getEsp());
+                    distributions.add(dist.cumulativeProbability(currentSignal));
+                }
+            }
+        }
+    }
+
+    private void calculateAreaDistributions(HashMap<String, Double> avgStrength, Map.Entry<String, ArrayList<AreaData>> area, ArrayList<Double> distributions) {
+        NormalDistribution dist;
+        for (AreaData device : area.getValue()) {
+            if (avgStrength.containsKey(device.getName())) {
+                if (!excludedWifi.contains(device.getName()) && !excludedBt.contains(device.getName())) {
+                    dist = new NormalDistribution(device.getAvg(), device.getSd());
+                    double currentSignal = avgStrength.get(device.getName());
+                    distributions.add(dist.cumulativeProbability(currentSignal));
+                }
+            }
+        }
+    }
+
+    private void handleHotspotData(HashMap<String, ArrayList<Integer>> hotspotRssiPerEsp, HashMap<String, Double> hotspotAvgRssiPerEsp) {
+        for (HotspotResult result : hotspotData) {
+            if (hotspotRssiPerEsp.containsKey(result.getEsp()))
+                hotspotRssiPerEsp.get(result.getEsp()).add(result.getRssi());
+            else
+                hotspotRssiPerEsp.put(result.getEsp(), new ArrayList<>(Collections.singletonList(result.getRssi())));
+        }
+
+        for (Map.Entry<String, ArrayList<Integer>> entry : hotspotRssiPerEsp.entrySet()) {
+            hotspotAvgRssiPerEsp.put(entry.getKey(), calculateAverage(entry.getValue()));
+        }
+    }
+
+    private void rssiBleList(HashMap<String, ArrayList<Integer>> strengthList) {
+        for (android.bluetooth.le.ScanResult i : currentResBle) {
+            String id;
+            if (i.getDevice().getName() != null) id = i.getDevice().getName();
+            else id = i.getDevice().getAddress();
+
+            if (strengthList.containsKey(id))
+                strengthList.get(id).add(i.getRssi());
+            else strengthList.put(id, new ArrayList<>(Collections.singletonList(i.getRssi())));
+        }
+    }
+
+    private void rssiWifiList(HashMap<String, ArrayList<Integer>> strengthList) {
+        for (ScanResult i : currentResWifi) {
+            if (strengthList.containsKey(i.SSID))
+                strengthList.get(i.SSID).add(i.level);
+            else strengthList.put(i.SSID, new ArrayList<>(Collections.singletonList(i.level)));
+        }
+    }
+
+    private void bleAgeFiltering(int maxScanAge) {
         Date date = new Date();
         long scanTimestamp;
         long actualTimestamp;
-
-
-        SharedPreferences sharedPref = context.getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
-        int maxScanAge = sharedPref.getInt(Pref.scanAge, AppConfig.maxScanAge);
-        boolean activeMode = sharedPref.getBoolean(Pref.activeMode, false);
-        int thresholdFitting = sharedPref.getInt(Pref.fittingThreshold, -1);
-
-        //wifi age filtering
-        for (int i = currentResWifi.size() - 1; i >= 0; i--) {
-            scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResWifi.get(i).timestamp / 1000);
-            actualTimestamp = date.getTime();
-            if (actualTimestamp > scanTimestamp + maxScanAge) currentResWifi.remove(i);
-        }
-
-        //ble age filtering
         for (int i = currentResBle.size() - 1; i >= 0; i--) {
             scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResBle.get(i).getTimestampNanos() / 1000000);
             actualTimestamp = date.getTime();
             if (actualTimestamp > scanTimestamp + maxScanAge) currentResBle.remove(i);
         }
+    }
 
-        Log.d(Tag.ANALYZE, "Starting analyze with hotspotData size: " + hotspotData.size() +", wifi results size: " + currentResWifi.size() + ", ble result size: " + currentResBle.size() + ", excludedDevices: " + excludedWifi.toString() + excludedBt.toString() + ", callback: " + !nullCallback + ", active: " + activeMode);
-
-        noResults = false;
-        if (hotspotData.size() == 0 && currentResWifi.size() == 0 && currentResBle.size() == 0) {
-            if (!noResults) updateNotificationArea(context.getString(R.string.no_scan_results), context);
-            noResults = true;
+    private void wifiAgeFiltering(int maxScanAge) {
+        Date date = new Date();
+        long scanTimestamp;
+        long actualTimestamp;
+        for (int i = currentResWifi.size() - 1; i >= 0; i--) {
+            scanTimestamp = System.currentTimeMillis() - SystemClock.elapsedRealtime() + (currentResWifi.get(i).timestamp / 1000);
+            actualTimestamp = date.getTime();
+            if (actualTimestamp > scanTimestamp + maxScanAge) currentResWifi.remove(i);
         }
-        else {
-            noResults = false;
-
-            // create list of rssi for wifi
-            for (ScanResult i : currentResWifi) {
-                if (strengthList.containsKey(i.SSID))
-                    strengthList.get(i.SSID).add(i.level);
-                else strengthList.put(i.SSID, new ArrayList<>(Collections.singletonList(i.level)));
-            }
-
-            // create list of rssi for ble
-            for (android.bluetooth.le.ScanResult i : currentResBle) {
-                String id;
-                if (i.getDevice().getName() != null) id = i.getDevice().getName();
-                else id = i.getDevice().getAddress();
-
-                if (strengthList.containsKey(id))
-                    strengthList.get(id).add(i.getRssi());
-                else strengthList.put(id, new ArrayList<>(Collections.singletonList(i.getRssi())));
-            }
-
-            // calculate avg signal strength
-            for (String key : strengthList.keySet()) {
-                avgStrength.put(key, calculateAverage(strengthList.get(key)));
-            }
-
-
-            HashMap<String, ArrayList<Integer>> hotspotRssiPerEsp = new HashMap<>();
-            HashMap<String, Double> hotspotAvgRssiPerEsp = new HashMap<>();
-
-            if (activeMode) {
-                for (HotspotResult result : hotspotData) {
-                    if (hotspotRssiPerEsp.containsKey(result.getEsp()))
-                        hotspotRssiPerEsp.get(result.getEsp()).add(result.getRssi());
-                    else
-                        hotspotRssiPerEsp.put(result.getEsp(), new ArrayList<>(Collections.singletonList(result.getRssi())));
-                }
-
-                for (Map.Entry<String, ArrayList<Integer>> entry : hotspotRssiPerEsp.entrySet()) {
-                    hotspotAvgRssiPerEsp.put(entry.getKey(), calculateAverage(entry.getValue()));
-                }
-            }
-
-
-            HashMap<String, Double> probabilityPerArea = new HashMap<>();
-
-
-            for (Map.Entry<String, ArrayList<AreaData>> area : areas.entrySet()) {
-                Log.v(Tag.ANALYZE, "Area " + area.getKey());
-                ArrayList<Double> distributions = new ArrayList<>();
-                NormalDistribution dist;
-                for (AreaData device : area.getValue()) {
-                    if (avgStrength.containsKey(device.getName())) {
-                        if (!excludedWifi.contains(device.getName()) && !excludedBt.contains(device.getName())) {
-                            dist = new NormalDistribution(device.getAvg(), device.getSd());
-                            double currentSignal = avgStrength.get(device.getName());
-                            distributions.add(dist.cumulativeProbability(currentSignal));
-                        }
-                    }
-                }
-
-                if (activeMode) {
-                    if (areasHotspot.containsKey(area.getKey())) {
-
-                        for (HotspotData device: areasHotspot.get(area.getKey())) {
-                            if (hotspotAvgRssiPerEsp.containsKey(device.getEsp())) {
-                                dist = new NormalDistribution(device.getAvg(), device.getSd());
-                                double currentSignal = hotspotAvgRssiPerEsp.get(device.getEsp());
-                                distributions.add(dist.cumulativeProbability(currentSignal));
-                            }
-                        }
-
-                    }
-                }
-
-
-
-                ArrayList<Double> diffToCenter = new ArrayList<>();
-                for (double distribution : distributions)
-                    diffToCenter.add(Math.abs(distribution - 0.5));
-
-                double avgDiffToCenter = MathCalc.averageListDouble(diffToCenter);
-
-                //double avgDistribution = MathCalc.averageListDouble(distributions);
-                probabilityPerArea.put(area.getKey(), avgDiffToCenter);
-
-                //Log.i(Tag.ANALYZE, "Distributions in " + area.getKey() + ": " + distributions.toString());
-            }
-            //Log.i(Tag.ANALYZE, "Avg probability: " + probabilityPerArea.toString());
-
-
-            double min = 1;  // all values are < 0
-            String bestAreaMatch = "";
-            for (Map.Entry<String, Double> area : probabilityPerArea.entrySet()) {
-                if (area.getValue() < min) {
-                    min = area.getValue();
-                    bestAreaMatch = area.getKey();
-                }
-            }
-
-            double normalizeResult = Math.round(100 - (min * 100) * 2);
-            if (normalizeResult < thresholdFitting) {
-                bestAreaMatch = "";
-            }
-
-            if (!currentArea.equals(bestAreaMatch)) {
-                currentArea = bestAreaMatch;
-                Log.i(Tag.ANALYZE, "Entered new area: " + bestAreaMatch);
-                updateNotificationArea(context.getString(R.string.notif_in_area) + bestAreaMatch, context);
-            }
-
-            ArrayList<Pair<String, Double>> resUnordered = new ArrayList<>();
-
-            for (Map.Entry<String, Double> area : probabilityPerArea.entrySet()) {
-                resUnordered.add(new Pair<>(area.getKey(), area.getValue()));
-            }
-
-            resUnordered.sort(Comparator.comparing(p -> p.second));
-
-            resultProbabilities = new ArrayList<>();
-            for (Pair<String, Double> item : resUnordered)
-                resultProbabilities.add(item.first + ": " + Math.round(100 - (item.second * 100) * 2)  + "%");
-            Log.d(Tag.ANALYZE, "Analyze result probabilites: " + resultProbabilities);
-
-            if (callbacks != null) {
-
-
-                callbacks.setResults(resultProbabilities);
-                callbacks.setCurrentArea(bestAreaMatch);
-                ArrayList<String> excludedAll = new ArrayList<>();
-                excludedAll.addAll(excludedWifi);
-                excludedAll.addAll(excludedBt);
-                callbacks.setExcludedDevices(excludedAll);
-            }
-        }
-
-
     }
 
     private void updateNotificationArea(String msg, Context context) {
@@ -276,9 +265,6 @@ public class AreaAnalysis {
     public void setHotspotData(ArrayList<HotspotResult> hotspotData) {
         this.hotspotData = hotspotData;
     }
-
-
-
 
 
     /////////////////////

@@ -1,8 +1,7 @@
-package pl.michnam.app.core.http;
+package pl.michnam.app.http;
 
 import android.content.Context;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
@@ -17,9 +16,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import pl.michnam.app.R;
 import pl.michnam.app.core.analysis.AreaAnalysis;
-import pl.michnam.app.core.http.model.HotspotResult;
+import pl.michnam.app.http.model.HotspotResult;
 import pl.michnam.app.sql.DbManager;
 import pl.michnam.app.sql.entity.HotspotData;
 import pl.michnam.app.util.MathCalc;
@@ -139,18 +137,10 @@ public class RequestManager {
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, URL_HOTSPOT_GET, null, response -> {
             try {
                 JSONArray jsonArray = response.getJSONArray("data");
-                if (jsonArray != null) {
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
-                    }
-                }
-                //Log.i(Tag.HTTP, hotspotData.toString());
-
-
+                for (int i = 0; i < jsonArray.length(); i++)
+                    hotspotData.add(gson.fromJson(jsonArray.getString(i), HotspotResult.class));
                 AreaAnalysis.getInstance().setHotspotData(hotspotData);
-
             } catch (JSONException e) {
-                e.printStackTrace();
                 Log.w(Tag.HTTP, "Error parsing json, url: " + URL_HOTSPOT_GET);
             }
         }, error -> {
