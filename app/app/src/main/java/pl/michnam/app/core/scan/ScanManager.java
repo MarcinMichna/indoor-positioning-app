@@ -16,10 +16,10 @@ public class ScanManager {
     public static void startScanning(Context context, ServiceCallbacks serviceCallbacks) {
         WifiScan.startWifiScan(context);
         BleScan.startBleScan(context);
-        apiLoop(context, serviceCallbacks);
+        analyzeLoop(context, serviceCallbacks);
     }
 
-    private static void apiLoop(Context context, ServiceCallbacks serviceCallbacks) {
+    private static void analyzeLoop(Context context, ServiceCallbacks serviceCallbacks) {
         SharedPreferences sharedPref = context.getSharedPreferences(Pref.prefFile, Context.MODE_PRIVATE);
         boolean activeMode = sharedPref.getBoolean(Pref.activeMode, false);
         if (activeMode) {
@@ -32,7 +32,7 @@ public class ScanManager {
             public void run() {
                 if (MainService.isWorking()) {
                     AreaAnalysis.getInstance().updateLocation(context, serviceCallbacks);
-                    apiLoop(context, serviceCallbacks);
+                    analyzeLoop(context, serviceCallbacks);
                 }
             }
         }, AppConfig.apiRequestWaitTime);

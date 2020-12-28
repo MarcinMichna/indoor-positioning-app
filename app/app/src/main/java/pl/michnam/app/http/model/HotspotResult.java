@@ -1,4 +1,4 @@
-package pl.michnam.app.core.http.model;
+package pl.michnam.app.http.model;
 
 public class HotspotResult {
     private String ssid;
