@@ -26,8 +26,7 @@ const char *wifiPassword = "polska123";
 // Access Point
 const char *apPassword = "polska123";
 
-// REST
-String json = "";
+
 
 // Bluetooth
 BLEScan* bleScanner;
@@ -63,6 +62,7 @@ void setup() {
   bluetoothClientSetup();
 }
 
+String json = "";
 void loop() {
   delay(100);
   json = "";
